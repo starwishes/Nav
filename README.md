@@ -39,7 +39,16 @@ A minimalist, beautiful, and powerful personal/private navigation system.
 docker pull starwisher/starnav:latest
 ```
 
-### 2. 编辑 docker-compose.yml
+### 2. 构建多架构镜像 (AMD64 & ARM64)
+
+如果你需要支持不同架构（如树莓派或 ARM 架构服务器），可以使用 Docker Buildx：
+
+```bash
+# 构建并推送多架构镜像
+docker buildx build --platform linux/amd64,linux/arm64 -t your-username/starnav:latest --push .
+```
+
+### 3. 编辑 docker-compose.yml
 
 ```yaml
 services:
