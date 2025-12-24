@@ -13,6 +13,21 @@
         <div class="form-tip">新注册账户默认获得的等级。</div>
       </el-form-item>
 
+      <el-form-item label="显示时区">
+        <el-select v-model="settings.timezone" filterable placeholder="选择时区">
+          <el-option label="本地时间 (跟随浏览器)" value="" />
+          <el-option label="北京时间 (UTC+8)" value="Asia/Shanghai" />
+          <el-option label="东京时间 (UTC+9)" value="Asia/Tokyo" />
+          <el-option label="伦敦时间 (UTC+0)" value="Europe/London" />
+          <el-option label="纽约时间 (UTC-5)" value="America/New_York" />
+          <el-option label="洛杉矶时间 (UTC-8)" value="America/Los_Angeles" />
+          <el-option label="莫斯科时间 (UTC+3)" value="Europe/Moscow" />
+          <el-option label="巴黎时间 (UTC+1)" value="Europe/Paris" />
+          <el-option label="悉尼时间 (UTC+11)" value="Australia/Sydney" />
+        </el-select>
+        <div class="form-tip">首页时钟将根据此处设置的时区显示。</div>
+      </el-form-item>
+
       <el-divider>背景图设置</el-divider>
 
       <el-form-item label="背景图 URL">

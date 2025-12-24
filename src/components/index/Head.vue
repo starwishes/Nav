@@ -4,7 +4,7 @@
       <i class="iconfont icon-md-menu"></i>
     </div>
     <ul class="menu">
-      <li>
+      <li @click="router.push('/')">
         <div class="menu-item"><i class="iconfont icon-md-home"></i>首页</div>
       </li>
     </ul>

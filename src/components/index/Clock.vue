@@ -11,25 +11,52 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
+
 const hours = ref('00')
 const minutes = ref('00')
 const seconds = ref('00')
+const timezone = ref('')
 
-onMounted(() => {
-  // 组件挂载后执行定时任务每隔一秒执行
+const fetchTimezone = async () => {
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    timezone.value = data.timezone || '';
+  } catch (err) {
+    console.error('获取时区设置失败', err);
+  }
+}
+
+const clock = () => {
+  const options: Intl.DateTimeFormatOptions = {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  };
+  
+  if (timezone.value) {
+    options.timeZone = timezone.value;
+  }
+
+  const now = new Date();
+  const timeStr = now.toLocaleString('en-GB', options); // 使用 en-GB 强制 24 小时格式
+  const parts = timeStr.split(':');
+  
+  if (parts.length === 3) {
+    hours.value = parts[0];
+    minutes.value = parts[1];
+    seconds.value = parts[2];
+  }
+}
+
+onMounted(async () => {
+  await fetchTimezone();
+  clock();
   setInterval(clock, 1000);
 })
-const clock = () => {
-  let h = new Date().getHours();
-  let m = new Date().getMinutes();
-  let s = new Date().getSeconds();
-  // 设置格式
-  hours.value = h < 10 ? '0' + h : h;
-  minutes.value = m < 10 ? '0' + m : m;
-  seconds.value = s < 10 ? '0' + s : s;
-}
 </script>
 
 <style lang="scss" scoped>

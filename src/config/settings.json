@@ -1,5 +1,6 @@
 {
   "registrationEnabled": false,
   "defaultUserLevel": 1,
-  "backgroundUrl": "/uploads/background_1766581819626.jpg"
+  "backgroundUrl": "/uploads/background_1766581819626.jpg",
+  "timezone": "Asia/Shanghai"
 }

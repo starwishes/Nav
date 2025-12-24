@@ -1,13 +1,9 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import { SITE_NAME } from '@/config'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/index'
-  },
-  {
-    path: '/index',
     name: 'Index',
     component: () => import('@/views/Index/index.vue'),
     meta: { title: SITE_NAME }
@@ -21,7 +17,7 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 })
 

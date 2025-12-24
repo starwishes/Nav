@@ -15,7 +15,7 @@ const defaultBg = '/src/assets/img/wallpaper/khadmv.webp';
 // 获取公开设置
 const fetchSettings = async () => {
   try {
-    const res = await fetch('/api/public-settings');
+    const res = await fetch('/api/settings');
     const data = await res.json();
     if (data.backgroundUrl) {
       backgroundUrl.value = data.backgroundUrl;
@@ -34,7 +34,7 @@ const bgStyle = computed(() => ({
 
 <style lang="scss" scoped>
 .home-wallpaper {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;

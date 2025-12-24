@@ -1,11 +1,11 @@
-# 星语导航 (StarNav) v1.1.1
+# 星语导航 (StarNav) v1.2.0
 
 一个极简、美观、功能强大的个人/私有导航系统。
 A minimalist, beautiful, and powerful personal/private navigation system.
 
 **本项目基于开源项目 [CloudNav](https://github.com/sese972010/CloudNav) 进行深度开发与重构，旨在提供更完善的用户权限管理与更精致的 UI 体验。**
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/starwishes/Nav)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/starwishes/Nav)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Vue](https://img.shields.io/badge/vue-3.4.29-brightgreen.svg)](https://vuejs.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
@@ -30,7 +30,15 @@ A minimalist, beautiful, and powerful personal/private navigation system.
   - **Docker Compose**：一键拉取镜像部署，数据自动持久化。
   - **安全加固**：后端基于 BCrypt 强力加密，JWT 令牌验证，密钥自动生成。
 
-### 🆕 v1.1.1 新功能
+### 🆕 v1.2.0 更新摘要 (2024-12-24)
+
+- 🚀 **架构重构**：管理后台全面组件化，性能与可维护性飞跃。
+- 💎 **视觉升级**：重构全局玻璃态样式，白天模式清晰度大幅提振。
+- ☁️ **多时区同步**：首页时钟支持按后台设定的时区显示。
+- 📦 **逻辑优化**：导入功能由“覆盖”升级为“智能合并（去重）”。
+- 🔗 **路由净化**：全面启用 History 路由并移除首页后缀。
+
+### 🆕 v1.1.1 历史功能
 
 - 🏷️ **标签筛选**：首页支持按标签筛选书签，支持多标签组合
 - 🔥 **热门访问**：首页展示 Top 10 点击排行
@@ -77,18 +85,24 @@ docker-compose up -d
 
 ```
 .
-├── src/
-│   ├── assets/          # 静态资源 (CSS, SVG Favicon, Fonts)
-│   ├── components/      # Vue 3 功能组件 (Dialogs, Tables)
-│   ├── config/          # 持久化存储目录
-│   │   ├── accounts.json # 账户数据库
-│   │   ├── settings.json # 系统全局配置
-│   │   ├── data.json     # 默认/管理员数据
-│   │   └── users/        # 注册用户独立数据文件
-│   └── ...
-├── server.js            # Node.js + Express 核心后端
-├── Dockerfile           # 多阶段构建 Dockerfile
-└── docker-compose.yml   # 容器编排
+├── backend/             # Node.js + Express 后端核心
+│   ├── routes/          # API 路由 (Auth, Data, System)
+│   ├── middleware/      # 权限校验与安全中间件
+│   ├── services/        # 业务逻辑服务
+│   └── config/          # 持久化存储目录 (JSON 数据库)
+│       ├── accounts.json # 账户数据
+│       ├── settings.json # 系统配置
+│       └── data.json     # 导航数据
+├── src/                 # Vue 3 + Vite 前端
+│   ├── assets/          # 静态资源 (CSS, Fonts)
+│   ├── components/      # 复合式组件
+│   │   ├── admin/       # 后台管理专有组件 (Sidebar, Header, DataManager)
+│   │   └── index/       # 首页展示组件 (Search, Clock, Site, Anchor)
+│   ├── store/           # Pinia 状态管理
+│   └── views/           # 页面路由入口
+├── server.js            # 后端入口文件
+├── Dockerfile           # 多架构构建指令
+└── docker-compose.yml   # 生产环境编排
 ```
 
 ## 📄 开源说明

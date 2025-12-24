@@ -37,14 +37,27 @@ const changeAnchorPosition = (name) => {
 </script>
 <style lang="scss" scoped>
 .text {
-  font-size: 14px;
-  text-align: center;
+  font-size: 15px;
+  text-align: left;
   cursor: pointer;
-}
-.el-drawer__header {
-  margin: 0 auto;
+  color: #fff;
 }
 .item {
-  padding: 18px 0;
+  padding: 12px 24px;
+  margin: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(10px);
+    color: var(--ui-theme);
+  }
+}
+h2 {
+  color: #fff;
+  letter-spacing: 2px;
+  font-weight: 800;
 }
 </style>

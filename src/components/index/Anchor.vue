@@ -39,40 +39,71 @@ const changeAnchorPosition = name => {
 
 <style lang="scss" scoped>
 .home-nav {
-  width: 100%;
-  margin-top: 300px;
-  padding-bottom: 10px;
+  position: sticky;
+  top: 15px;
+  z-index: 100;
+  width: calc(100% - 40px);
+  max-width: 1200px;
+  margin: 280px auto 30px auto;
+  padding: 10px 24px;
   box-sizing: border-box;
-  background-color: var(--gray-50);
-  transition: background-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
   main {
-    width: calc(100% - 20px);
-    margin: 0 auto;
-    padding: 10px 0;
-    box-sizing: border-box;
-    background-color: var(--gray-0);
-    transition: background-color 0.3s ease;
+    width: 100%;
+    
     ul {
-      width: calc(100% - 20px);
-      margin: 0 auto;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      &::-webkit-scrollbar { display: none; }
 
-      flex-wrap: wrap;
-      background-color: var(--gray-50);
-      transition: background-color 0.3s ease;
       .record-item {
-        position: relative;
-        width: 100px;
-        padding: 10px;
-        display: flex;
-        text-align: center;
+        cursor: pointer;
+        padding: 8px 20px;
+        border-radius: 40px;
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.85);
+        transition: all 0.2s ease;
+        background: transparent;
+        white-space: nowrap;
 
-        // justify-content: space-between;
-        align-items: center;
-        box-sizing: border-box;
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+          transform: scale(1.05);
+        }
+
+        &.active {
+          background: var(--ui-theme);
+          color: white;
+          box-shadow: 0 4px 12px rgba(var(--ui-theme-rgb), 0.3);
+        }
       }
+    }
+  }
+}
+
+:root[theme-mode='dark'] {
+  .home-nav {
+    background: rgba(0, 0, 0, 0.2);
+    .record-item {
+      color: #aaa;
+      &:hover { color: var(--ui-theme); }
     }
   }
 }

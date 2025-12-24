@@ -8,3 +8,14 @@ docker-compose.yml
 env.example
 .gemini
 .jwt_secret
+# Runtime Data & Secrets
+.jwt_secret
+src/config/accounts.json
+src/config/settings.json
+src/config/users/
+src/config/uploads/
+src/config/.jwt_secret
+
+# Logs
+backend/logs/
+npm-debug.log*

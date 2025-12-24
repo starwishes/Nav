@@ -32,7 +32,8 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -240,4 +241,39 @@ html, body {
   --pink-200: #be185d;
   --pink-100: #9d174d;
   --pink-50: #831843;
+}
+
+/* Global Glassmorphism Styles */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Element Plus Drawer Refinement */
+.el-drawer {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: none !important;
+}
+
+.el-drawer__body {
+  color: #fff !important;
+  padding: 20px !important;
+}
+
+/* Dark Mode Overrides */
+:root[theme-mode='dark'] {
+  .glass-panel {
+    background: rgba(0, 0, 0, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .el-drawer {
+    background: rgba(0, 0, 0, 0.4) !important;
+  }
 }

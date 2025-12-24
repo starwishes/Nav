@@ -468,7 +468,7 @@ const handleItemClick = (url: string) => {
   padding: 0 4px;
   width: 46px;
   height: 100%;
-  border-right: 1px solid var(--el-border-color-lighter);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
   margin-right: 8px;
   user-select: none;
   transition: opacity 0.3s;
@@ -640,12 +640,12 @@ const handleItemClick = (url: string) => {
   width: 100%;
   max-height: 70vh;
   overflow-y: auto;
-  background-color: var(--gray-o8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--gray-o3);
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   padding: 16px;
   z-index: 9999;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -792,23 +792,36 @@ const handleItemClick = (url: string) => {
 }
 
 :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   box-shadow: none !important;
   transition: all 0.3s ease;
-  height: 46px;
-  border-radius: 23px;
-  border: 1px solid var(--el-border-color-lighter);
+  height: 48px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   padding-left: 0; 
 
-  &:focus-within {
-    box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
-    border-color: var(--el-color-primary);
+  &:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+
+  &.is-focus {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: var(--ui-theme) !important;
+    box-shadow: 0 0 0 1px var(--ui-theme) inset !important;
   }
 }
 
 :deep(.el-input__inner) {
-  height: 46px;
-  line-height: 46px;
+  height: 48px;
+  line-height: 48px;
   font-size: 15px;
+  color: #ffffff !important;
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
 }
 
 :deep(.el-input__prefix) {
