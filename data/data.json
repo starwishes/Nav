@@ -1,0 +1,71 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "常用推荐",
+      "private": false
+    },
+    {
+      "id": 2,
+      "name": "实用工具",
+      "private": false
+    },
+    {
+      "id": 3,
+      "name": "开发资源",
+      "private": false
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "name": "Google",
+      "url": "https://www.google.com",
+      "description": "全球最大的搜索引擎",
+      "categoryId": 1
+    },
+    {
+      "id": 2,
+      "name": "GitHub",
+      "url": "https://github.com",
+      "description": "全球最大开源社区",
+      "categoryId": 1
+    },
+    {
+      "id": 3,
+      "name": "哔哩哔哩",
+      "url": "https://www.bilibili.com",
+      "description": "年轻人的视频社区",
+      "categoryId": 1,
+      "pinned": false
+    },
+    {
+      "id": 4,
+      "name": "IT Tools",
+      "url": "https://it-tools.tech",
+      "description": "程序员工具集合",
+      "categoryId": 2
+    },
+    {
+      "id": 5,
+      "name": "草料二维码",
+      "url": "https://cli.im",
+      "description": "二维码生成与解码",
+      "categoryId": 2
+    },
+    {
+      "id": 6,
+      "name": "Vue.js",
+      "url": "https://vuejs.org",
+      "description": "渐进式 JavaScript 框架",
+      "categoryId": 3
+    },
+    {
+      "id": 7,
+      "name": "Vite",
+      "url": "https://vitejs.dev",
+      "description": "下一代前端构建工具",
+      "categoryId": 3
+    }
+  ]
+}

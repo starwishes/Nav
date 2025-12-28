@@ -1,13 +1,22 @@
 import fs from 'fs';
 import path from 'path';
 
+// 日志级别：0=silent, 1=error, 2=warn, 3=info (默认)
+const LOG_LEVEL = parseInt(process.env.LOG_LEVEL || '3', 10);
+
 /**
- * 极简日志工具
+ * 日志工具（支持日志级别控制）
  */
 export const logger = {
-    info: (msg, data = {}) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, data),
-    error: (msg, err = {}) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, err),
-    warn: (msg, data = {}) => console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`, data),
+    info: (msg, data = {}) => {
+        if (LOG_LEVEL >= 3) console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, data);
+    },
+    warn: (msg, data = {}) => {
+        if (LOG_LEVEL >= 2) console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`, data);
+    },
+    error: (msg, err = {}) => {
+        if (LOG_LEVEL >= 1) console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, err);
+    },
 };
 
 /**

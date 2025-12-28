@@ -18,27 +18,28 @@ RUN npm run build
 # Stage 2: Runtime
 FROM node:20-alpine
 
-# Install dumb-init for proper signal handling (PID 1 problem)
-RUN apk add --no-cache dumb-init
+# Install dumb-init for signal handling and su-exec for user switching
+RUN apk add --no-cache dumb-init su-exec
 
 WORKDIR /app
 
-# Create necessary directories and set ownership for non-root user
+# Create data directory (will be overwritten by bind mount, but needed for standalone)
 RUN mkdir -p /app/data && chown -R node:node /app
 
 # Copy dependencies definition
-COPY --chown=node:node package*.json ./
+COPY package*.json ./
 
-# Switch to non-root user 'node' for security
-USER node
-
-# Install production dependencies and clean cache to reduce image size
+# Install production dependencies as root, then fix ownership
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built assets and server code with correct ownership
-COPY --chown=node:node --from=build-stage /app/dist ./dist
-COPY --chown=node:node --from=build-stage /app/server.js ./
-COPY --chown=node:node --from=build-stage /app/backend ./backend
+# Copy built assets and server code
+COPY --from=build-stage /app/dist ./dist
+COPY --from=build-stage /app/server.js ./
+COPY --from=build-stage /app/backend ./backend
+
+# Copy and setup entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Set environment variables
 ENV NODE_ENV=production \
@@ -47,6 +48,6 @@ ENV NODE_ENV=production \
 
 EXPOSE 3333
 
-# Use dumb-init as entrypoint to handle signals correctly
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+# Use dumb-init + entrypoint for proper signal handling and permission fix
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

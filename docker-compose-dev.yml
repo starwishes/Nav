@@ -9,6 +9,7 @@ services:
       - ./data:/app/data
     environment:
       - ADMIN_USERNAME=admin # 管理员用户名
-      - ADMIN_PASSWORD=admin123 # 管理员密码
+      - ADMIN_PASSWORD=admin123 # 管理员密码，请务必修改！
+      - JWT_SECRET=your-secret-key-here-please-change-it # ⚠️ 必须修改为随机字符串！
       # - CORS_ORIGINS=https://your-domain.com # 生产环境设置允许的域名
     restart: always

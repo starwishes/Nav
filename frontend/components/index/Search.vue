@@ -1,39 +1,49 @@
 <template>
   <div class="search-container">
-    <div class="search-input-wrapper">
-      <el-input
-        v-model="searchText"
-        :placeholder="currentEngine ? `在 ${currentEngine.name} 中搜索...` : '请输入搜索内容'"
-        clearable
-        @input="handleInputChange"
-        @clear="clearSearch"
-        @focus="handleFocus"
-        @blur="handleBlur"
-        @keyup.enter="handleEnter"
-      >
-        <template #prefix>
+    <div class="search-wrapper">
+      <!-- 单一搜索框 -->
+      <div class="unified-search-box">
+        <!-- 左侧模式切换区 -->
+        <div class="mode-switcher">
+          <!-- 本地搜索按钮 -->
+          <div 
+            class="mode-btn" 
+            :class="{ active: searchMode === 'local' }"
+            @click="switchMode('local')"
+            title="本地书签搜索"
+          >
+            <el-icon :size="18"><Search /></el-icon>
+          </div>
+          
+          <!-- 分割线 -->
+          <div class="mode-divider"></div>
+          
+          <!-- 在线搜索按钮（带搜索引擎选择） -->
           <el-popover
             placement="bottom-start"
-            :width="300"
+            :width="280"
             trigger="click"
             popper-class="search-engine-popover"
-            :disabled="!adminStore.isAuthenticated"
           >
             <template #reference>
-              <div class="search-engine-trigger" :class="{ 'disabled': !adminStore.isAuthenticated }">
-                <el-icon v-if="!currentEngine" :size="20"><Search /></el-icon>
+              <div 
+                class="mode-btn engine-btn" 
+                :class="{ active: searchMode === 'online' }"
+                @click="switchMode('online')"
+                :title="currentEngine?.name || '在线搜索'"
+              >
                 <img 
-                  v-else 
+                  v-if="currentEngine?.url"
                   :src="getEngineIcon(currentEngine.url)" 
-                  class="engine-icon-trigger"
+                  class="engine-icon"
                   alt="icon"
                 />
-                <el-icon v-if="adminStore.isAuthenticated" class="arrow-icon"><ArrowDown /></el-icon>
+                <el-icon v-else :size="18"><ChromeFilled /></el-icon>
               </div>
             </template>
             <div class="engine-list">
               <div
-                v-for="(engine, index) in searchEngines"
+                v-for="(engine, index) in onlineEngines"
                 :key="index"
                 class="engine-item"
                 :class="{ active: currentEngine?.name === engine.name }"
@@ -43,11 +53,10 @@
                   <img :src="getEngineIcon(engine.url)" class="engine-icon-list" alt="icon" />
                   <span class="name">{{ engine.name }}</span>
                 </div>
-                <!-- 选中状态显示对号 -->
                 <el-icon v-if="currentEngine?.name === engine.name" class="check-icon"><Check /></el-icon>
                 
-                <!-- 操作按钮组 (移动/编辑/删除) -->
-                <div class="action-group">
+                <!-- 仅登录后显示操作按钮 -->
+                <div class="action-group" v-if="adminStore.isAuthenticated">
                    <el-icon 
                      class="action-icon move" 
                      :class="{ disabled: index === 0 }"
@@ -56,7 +65,7 @@
                    ><Top /></el-icon>
                    <el-icon 
                      class="action-icon move" 
-                     :class="{ disabled: index === searchEngines.length - 1 }"
+                     :class="{ disabled: index === onlineEngines.length - 1 }"
                      @click.stop="moveEngine(index, 1)"
                      title="下移"
                    ><Bottom /></el-icon>
@@ -64,18 +73,55 @@
                    <el-icon class="action-icon delete" @click.stop="deleteEngine(index)" title="删除"><Delete /></el-icon>
                 </div>
               </div>
-              <div class="engine-item add-btn" @click="openAddDialog">
+              <!-- 仅登录后显示添加按钮 -->
+              <div class="engine-item add-btn" v-if="adminStore.isAuthenticated" @click="openAddDialog">
                 <el-icon><Plus /></el-icon>
                 <span>添加搜索引擎</span>
               </div>
             </div>
           </el-popover>
-        </template>
-      </el-input>
+        </div>
+        
+        <!-- 右侧输入区 -->
+        <input
+          ref="searchInputRef"
+          v-model="searchText"
+          class="search-input"
+          :placeholder="searchMode === 'local' ? '搜索本地书签...' : `在 ${currentEngine?.name || '搜索引擎'} 中搜索...`"
+          @input="handleInputChange"
+          @focus="handleFocus"
+          @blur="handleBlur"
+          @keyup.enter="handleEnter"
+        />
+        
+        <!-- 清除按钮 -->
+        <div class="clear-btn" v-if="searchText" @click="clearSearch">
+          <el-icon :size="16"><CircleClose /></el-icon>
+        </div>
+      </div>
       
-      <div class="search-results-container" v-if="isActive && (suggestions.length > 0 || (hasSearched && !loading && searchResults.length > 0))">
-        <!-- Keyword Suggestions -->
-        <div class="suggestion-list" v-if="suggestions.length > 0">
+      <!-- 搜索结果下拉 -->
+      <div class="search-results-container" v-if="isActive && hasSearched && !loading && searchResults.length > 0">
+        <div class="search-results">
+          <ul>
+            <a class="relative site inherit-text" v-for="item in searchResults" :key="item.id" @click="handleItemClick(item.url)">
+              <el-card class="site-card" shadow="never">
+                <div class="img-group">
+                  <el-avatar :size="36" :src="`${Favicon}${item.url}`"></el-avatar>
+                </div>
+                <div class="text-group">
+                  <div class="name text">{{ item.name }}</div>
+                  <div class="name text describe">{{ item.description }}</div>
+                </div>
+              </el-card>
+            </a>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- 搜索建议下拉（在线模式） -->
+      <div class="search-results-container" v-if="isActive && searchMode === 'online' && suggestions.length > 0">
+        <div class="suggestion-list">
           <div 
             v-for="(sug, index) in suggestions" 
             :key="index" 
@@ -87,34 +133,17 @@
             <el-icon><Search /></el-icon>
             <span>{{ sug }}</span>
           </div>
-          <div class="suggestion-divider" v-if="searchResults.length > 0">本地搜索结果</div>
-        </div>
-
-        <div class="search-results" v-if="hasSearched && !loading && searchResults.length > 0">
-          <ul>
-            <a class="relative site inherit-text" target="_blank" v-for="item in searchResults" :key="item.id" @click="handleItemClick(item.url)">
-              <el-card class="site-card" shadow="never">
-                <div class="img-group">
-                  <el-avatar :size="42" :src="`${Favicon}${item.url}`"> </el-avatar>
-                </div>
-                <div class="text-group">
-                  <div class="name text">{{ item.name }}</div>
-                  <div class="name text describe">{{ item.description }}</div>
-                </div>
-              </el-card>
-            </a>
-            <i style="width: 200px" v-for="i in 6" :key="i"></i>
-          </ul>
         </div>
       </div>
       
-      <!-- 本地搜索无结果提示，仅当不使用搜索引擎且无结果时显示 -->
-      <div class="search-results-container" v-if="hasSearched && !loading && isActive && searchResults.length === 0 && suggestions.length === 0 && !currentEngine">
-         <el-empty description="未找到相关结果" />
+      <!-- 搜索无结果 -->
+      <div class="search-results-container empty" v-if="isActive && hasSearched && !loading && searchResults.length === 0 && searchMode === 'local' && searchText.trim()">
+        <el-empty description="未找到相关书签" :image-size="60" />
       </div>
-
+      
+      <!-- Loading -->
       <div v-if="loading && isActive" class="loading search-results-container">
-        <el-skeleton :rows="3" animated />
+        <el-skeleton :rows="2" animated />
       </div>
     </div>
 
@@ -146,11 +175,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { Favicon } from '@/config'
 import { openUrl } from '@/utils'
 import { useAdminStore } from '@/store/admin'
-import { Search, ArrowDown, Check, Plus, Delete, Edit, Top, Bottom } from '@element-plus/icons-vue'
+import { Search, Check, Plus, Delete, Edit, Top, Bottom, CircleClose } from '@element-plus/icons-vue'
+import { ChromeFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 // 定义搜索结果项的接口
@@ -169,17 +199,23 @@ interface SearchEngine {
   url: string
 }
 
+const adminStore = useAdminStore()
+
+// ========== 统一搜索状态 ==========
+const searchMode = ref<'local' | 'online'>('local') // 搜索模式
 const searchText = ref('')
 const searchResults = ref<SearchResultItem[]>([])
 const hasSearched = ref(false)
 const loading = ref(false)
-const debounceTimeout = ref<number | null>(null)
 const isActive = ref(false)
+const debounceTimeout = ref<number | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
+
+// 在线搜索建议
 const suggestions = ref<string[]>([])
 const activeSuggestionIndex = ref(-1)
-const adminStore = useAdminStore()
 
-// 搜索引擎相关
+// ========== 搜索引擎相关 ==========
 const defaultEngines: SearchEngine[] = [
   { name: '百度', url: 'https://www.baidu.com/s?wd=' },
   { name: 'Bing', url: 'https://cn.bing.com/search?q=' },
@@ -187,44 +223,36 @@ const defaultEngines: SearchEngine[] = [
 ]
 
 const searchEngines = ref<SearchEngine[]>([...defaultEngines])
-const currentEngine = ref<SearchEngine | null>(defaultEngines[0]) 
+const currentEngine = ref<SearchEngine | null>(defaultEngines[0])
+
+// 计算属性：仅在线搜索引擎
+const onlineEngines = computed(() => searchEngines.value.filter(e => e.url))
 
 // 监听登录状态变化
 watch(() => adminStore.isAuthenticated, (isAuthenticated) => {
   if (isAuthenticated) {
-     // 恢复用户保存的设置
-     const savedEngines = localStorage.getItem('user_search_engines')
-     if (savedEngines) {
-       searchEngines.value = JSON.parse(savedEngines)
-     }
-     
-     const savedCurrent = localStorage.getItem('current_search_engine')
-     if (savedCurrent) {
-       currentEngine.value = JSON.parse(savedCurrent)
-     } else {
-       currentEngine.value = defaultEngines[0] 
-     }
+    const savedEngines = localStorage.getItem('user_search_engines')
+    if (savedEngines) {
+      searchEngines.value = JSON.parse(savedEngines)
+    }
+    const savedCurrent = localStorage.getItem('current_search_engine')
+    if (savedCurrent) {
+      currentEngine.value = JSON.parse(savedCurrent)
+    } else {
+      currentEngine.value = defaultEngines[0]
+    }
   } else {
-    // 未登录强制使用 Bing
-    const bing = defaultEngines.find(e => e.name === 'Bing')
-    if (bing) currentEngine.value = bing
-    // 重置列表为默认（虽然可能看不到）
-    searchEngines.value = [...defaultEngines] // 主要是为了防止缓存了旧数据
+    currentEngine.value = defaultEngines[0]
+    searchEngines.value = [...defaultEngines]
   }
 }, { immediate: true })
 
+// ========== 搜索引擎管理 ==========
 const showDialog = ref(false)
 const isEditing = ref(false)
 const editingIndex = ref(-1)
 const engineForm = reactive({ name: '', url: '' })
 
-// 初始化加载搜索引擎
-onMounted(() => {
-  // onMounted 里的逻辑已经由 watch immediate 覆盖，这里其实可以删了或者留着做兜底
-  // 但为了不破坏原有结构，保留为空也行，或者移除重复逻辑
-})
-
-//获取搜索引擎图标
 const getEngineIcon = (url: string) => {
   try {
     const urlObj = new URL(url)
@@ -234,17 +262,11 @@ const getEngineIcon = (url: string) => {
   }
 }
 
-// 选择搜索引擎
 const selectEngine = (engine: SearchEngine) => {
-  if (!adminStore.isAuthenticated) return // 未登录禁止切换
-  
   currentEngine.value = engine
   localStorage.setItem('current_search_engine', JSON.stringify(engine))
-  // 聚焦回输入框
-  handleFocus()
 }
 
-// 打开添加对话框
 const openAddDialog = () => {
   isEditing.value = false
   engineForm.name = ''
@@ -252,7 +274,6 @@ const openAddDialog = () => {
   showDialog.value = true
 }
 
-// 打开编辑对话框
 const openEditDialog = (engine: SearchEngine, index: number) => {
   isEditing.value = true
   editingIndex.value = index
@@ -261,7 +282,6 @@ const openEditDialog = (engine: SearchEngine, index: number) => {
   showDialog.value = true
 }
 
-// 保存搜索引擎（添加或更新）
 const saveEngine = () => {
   if (!engineForm.name || !engineForm.url) {
     ElMessage.warning('请填写完整信息')
@@ -269,16 +289,16 @@ const saveEngine = () => {
   }
   
   if (isEditing.value && editingIndex.value > -1) {
-    // 更新
-    searchEngines.value[editingIndex.value] = { ...engineForm }
-    // 如果更新的是当前选中的，同步更新
-    if (currentEngine.value?.name === searchEngines.value[editingIndex.value].name) {
-       currentEngine.value = searchEngines.value[editingIndex.value]
-       localStorage.setItem('current_search_engine', JSON.stringify(currentEngine.value))
+    const realIndex = searchEngines.value.findIndex(e => e.name === onlineEngines.value[editingIndex.value]?.name)
+    if (realIndex > -1) {
+      searchEngines.value[realIndex] = { ...engineForm }
+      if (currentEngine.value?.name === searchEngines.value[realIndex].name) {
+        currentEngine.value = searchEngines.value[realIndex]
+        localStorage.setItem('current_search_engine', JSON.stringify(currentEngine.value))
+      }
     }
     ElMessage.success('修改成功')
   } else {
-    // 添加
     searchEngines.value.push({ ...engineForm })
     ElMessage.success('添加成功')
   }
@@ -287,65 +307,66 @@ const saveEngine = () => {
   showDialog.value = false
 }
 
-// 删除搜索引擎
 const deleteEngine = (index: number) => {
-  if (searchEngines.value.length <= 1) {
+  const targetEngine = onlineEngines.value[index]
+  if (!targetEngine) return
+  
+  if (onlineEngines.value.length <= 1) {
     ElMessage.warning('请至少保留一个搜索引擎')
     return
   }
   
-  // 确认删除（这里直接删，也可以加确认框，为了流畅性先直接删）
-  const deletedEngine = searchEngines.value[index]
-  const isCurrent = currentEngine.value?.name === deletedEngine.name
+  const realIndex = searchEngines.value.findIndex(e => e.name === targetEngine.name)
+  if (realIndex === -1) return
   
-  searchEngines.value.splice(index, 1)
+  const isCurrent = currentEngine.value?.name === targetEngine.name
+  searchEngines.value.splice(realIndex, 1)
   localStorage.setItem('user_search_engines', JSON.stringify(searchEngines.value))
   
-  // 如果删除的是当前选中的，重置为第一个
   if (isCurrent) {
-    currentEngine.value = searchEngines.value[0]
+    currentEngine.value = onlineEngines.value[0] || defaultEngines[0]
     localStorage.setItem('current_search_engine', JSON.stringify(currentEngine.value))
   }
 }
 
-// 移动搜索引擎
 const moveEngine = (index: number, direction: number) => {
   const newIndex = index + direction
-  if (newIndex < 0 || newIndex >= searchEngines.value.length) return
+  if (newIndex < 0 || newIndex >= onlineEngines.value.length) return
   
-  const temp = searchEngines.value[index]
-  searchEngines.value[index] = searchEngines.value[newIndex]
-  searchEngines.value[newIndex] = temp
+  // 获取真实索引
+  const engine1 = onlineEngines.value[index]
+  const engine2 = onlineEngines.value[newIndex]
+  const realIndex1 = searchEngines.value.findIndex(e => e.name === engine1.name)
+  const realIndex2 = searchEngines.value.findIndex(e => e.name === engine2.name)
+  
+  if (realIndex1 === -1 || realIndex2 === -1) return
+  
+  const temp = searchEngines.value[realIndex1]
+  searchEngines.value[realIndex1] = searchEngines.value[realIndex2]
+  searchEngines.value[realIndex2] = temp
   
   localStorage.setItem('user_search_engines', JSON.stringify(searchEngines.value))
 }
 
-// 处理回车键
-const handleEnter = () => {
-  if (!searchText.value.trim()) return
-  
-  if (currentEngine.value) {
-    window.open(currentEngine.value.url + encodeURIComponent(searchText.value), '_blank')
-  } else {
-    // 如果没有选搜索引擎，且有搜索结果，打开第一个
-    if (searchResults.value.length > 0) {
-      openUrl(searchResults.value[0].url)
-    }
-  }
+// ========== 模式切换 ==========
+const switchMode = (mode: 'local' | 'online') => {
+  searchMode.value = mode
+  // 清空之前的搜索结果
+  searchResults.value = []
+  suggestions.value = []
+  hasSearched.value = false
+  // 聚焦输入框
+  searchInputRef.value?.focus()
 }
 
-// 处理聚焦事件
+// ========== 统一事件处理 ==========
 const handleFocus = () => {
   isActive.value = true
 }
 
-// 处理失焦事件
 const handleBlur = (e: FocusEvent) => {
-  // 获取点击的元素
   const target = e.relatedTarget as HTMLElement
-
-  // 只有当点击到搜索区域外才关闭结果，且不是在点击popover内的元素
-  const isClickInsideSearch = document.querySelector('.search-container')?.contains(target)
+  const isClickInsideSearch = document.querySelector('.search-wrapper')?.contains(target)
   if (!isClickInsideSearch) {
     setTimeout(() => {
       isActive.value = false
@@ -353,7 +374,6 @@ const handleBlur = (e: FocusEvent) => {
   }
 }
 
-// 处理输入变化的函数
 const handleInputChange = () => {
   if (debounceTimeout.value !== null) {
     clearTimeout(debounceTimeout.value)
@@ -369,33 +389,14 @@ const handleInputChange = () => {
   isActive.value = true
 
   debounceTimeout.value = setTimeout(() => {
-    performSearch()
-    fetchSuggestions()
+    if (searchMode.value === 'local') {
+      performLocalSearch()
+    } else {
+      fetchSuggestions()
+    }
   }, 300) as unknown as number
 }
 
-// 获取搜索建议
-const fetchSuggestions = async () => {
-  if (!searchText.value.trim()) return
-  try {
-    const type = currentEngine.value?.name === 'Google' ? 'google' : 'baidu'
-    const response = await fetch(`/api/suggest?keyword=${encodeURIComponent(searchText.value)}&type=${type}`)
-    const data = await response.json()
-    suggestions.value = data
-  } catch (err) {
-    console.error('Fetch suggestions error:', err)
-  }
-}
-
-// 处理建议点击
-const handleSuggestionClick = (sug: string) => {
-  searchText.value = sug
-  suggestions.value = []
-  handleEnter()
-}
-
-
-// 清空搜索
 const clearSearch = () => {
   searchText.value = ''
   searchResults.value = []
@@ -403,11 +404,25 @@ const clearSearch = () => {
   hasSearched.value = false
 }
 
-// 执行搜索的函数
-const performSearch = async () => {
-  if (!searchText.value.trim()) {
-    return
+const handleEnter = () => {
+  if (!searchText.value.trim()) return
+  
+  if (searchMode.value === 'local') {
+    // 本地模式：打开第一个搜索结果
+    if (searchResults.value.length > 0) {
+      openUrl(searchResults.value[0].url)
+    }
+  } else {
+    // 在线模式：跳转到搜索引擎
+    if (currentEngine.value?.url) {
+      window.open(currentEngine.value.url + encodeURIComponent(searchText.value), '_blank')
+    }
   }
+}
+
+// 本地搜索
+const performLocalSearch = async () => {
+  if (!searchText.value.trim()) return
 
   loading.value = true
   hasSearched.value = true
@@ -418,22 +433,54 @@ const performSearch = async () => {
 
     const keyword = searchText.value.toLowerCase()
     const filteredItems = data.content.items.filter((item: any) => {
-      if (!adminStore.isAuthenticated && item.private) {
-        return false
-      }
-      return item.name.toLowerCase().includes(keyword) || item.description.toLowerCase().includes(keyword)
+      if (!adminStore.isAuthenticated && item.private) return false
+      if (item.level && item.level > (adminStore.userLevel || 0)) return false
+      
+      const nameMatch = item.name?.toLowerCase().includes(keyword)
+      const descMatch = item.description?.toLowerCase().includes(keyword)
+      const urlMatch = item.url?.toLowerCase().includes(keyword)
+      const tagsMatch = item.tags?.some((tag: string) => tag.toLowerCase().includes(keyword))
+      
+      return nameMatch || descMatch || urlMatch || tagsMatch
     })
 
-    searchResults.value = filteredItems.slice(0, 10) // 限制显示10条
+    filteredItems.sort((a: any, b: any) => {
+      const aScore = (a.name?.toLowerCase().includes(keyword) ? 3 : 0) + 
+                     (a.tags?.some((t: string) => t.toLowerCase().includes(keyword)) ? 2 : 0)
+      const bScore = (b.name?.toLowerCase().includes(keyword) ? 3 : 0) + 
+                     (b.tags?.some((t: string) => t.toLowerCase().includes(keyword)) ? 2 : 0)
+      return bScore - aScore
+    })
+
+    searchResults.value = filteredItems.slice(0, 8)
   } catch (error) {
-    console.error('搜索出错:', error)
+    console.error('本地搜索出错:', error)
     searchResults.value = []
   } finally {
     loading.value = false
   }
 }
 
-// 处理点击项目
+// 获取在线搜索建议
+const fetchSuggestions = async () => {
+  if (!searchText.value.trim() || !currentEngine.value?.url) return
+  try {
+    const type = currentEngine.value?.name === 'Google' ? 'google' : 'baidu'
+    const response = await fetch(`/api/suggest?keyword=${encodeURIComponent(searchText.value)}&type=${type}`)
+    const data = await response.json()
+    suggestions.value = data
+  } catch (err) {
+    console.error('Fetch suggestions error:', err)
+  }
+}
+
+const handleSuggestionClick = (sug: string) => {
+  searchText.value = sug
+  suggestions.value = []
+  handleEnter()
+}
+
+// ========== 通用处理 ==========
 const handleItemClick = (url: string) => {
   setTimeout(() => {
     isActive.value = false
@@ -449,15 +496,119 @@ const handleItemClick = (url: string) => {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 800px;
+  max-width: 700px;
   margin: 0 auto;
   padding: 16px;
   z-index: 99;
 }
 
-.search-input-wrapper {
+.search-wrapper {
   position: relative;
   width: 100%;
+}
+
+.unified-search-box {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 4px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+  }
+  
+  &:focus-within {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--el-color-primary-rgb), 0.15),
+                0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.mode-switcher {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  gap: 2px;
+}
+
+.mode-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.6);
+  
+  &:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+  
+  &.active {
+    background: var(--el-color-primary);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(var(--el-color-primary-rgb), 0.4);
+  }
+  
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .engine-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+}
+
+.mode-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 4px;
+}
+
+.search-input {
+  flex: 1;
+  height: 40px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #fff;
+  padding: 0 12px;
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.clear-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s;
+  margin-right: 8px;
+  
+  &:hover {
+    color: #fff;
+  }
 }
 
 .search-engine-trigger {
@@ -635,27 +786,32 @@ const handleItemClick = (url: string) => {
 
 .search-results-container {
   position: absolute;
-  top: 50px;
+  top: 48px;
   left: 0;
   width: 100%;
-  max-height: 70vh;
+  max-height: 60vh;
   overflow-y: auto;
-  background-color: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background-color: rgba(30, 30, 40, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  padding: 12px;
   z-index: 9999;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
+  &.empty {
+    padding: 20px;
+    text-align: center;
+  }
+
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: var(--el-border-color-lighter);
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
   }
 }
@@ -702,88 +858,81 @@ const handleItemClick = (url: string) => {
 
   ul {
     display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: flex-start;
+    flex-direction: column;
+    gap: 8px;
 
     .site {
-      margin-top: 0;
       text-decoration: none;
-      width: calc(33.333% - 11px);
+      width: 100%;
       transition: transform 0.2s ease;
 
-      @media screen and (max-width: 768px) {
-        width: calc(50% - 8px);
-      }
-
-      @media screen and (max-width: 480px) {
-        width: 100%;
-      }
-
       &:hover {
-        transform: translateY(-3px);
+        transform: translateX(4px);
 
         .site-card {
           border-color: var(--el-color-primary-light-5);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+          background: rgba(255, 255, 255, 0.12);
         }
       }
 
       .site-card {
         position: relative;
         width: 100%;
-        height: 70px;
-        padding: 0;
+        padding: 10px 12px;
         display: flex;
         align-items: center;
         border-radius: 8px;
-        color: var(--el-text-color-primary);
-        transition: all 0.3s;
-        border: 1px solid var(--el-border-color-lighter);
+        color: #fff;
+        transition: all 0.2s;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        
+        :deep(.el-card__body) {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          padding: 0;
+        }
 
         .img-group {
-          position: absolute;
-          left: 14px;
           display: flex;
           justify-content: center;
           align-items: center;
-          border-radius: 50%;
-          overflow: hidden;
-          z-index: 2;
+          flex-shrink: 0;
+          margin-right: 10px;
         }
 
         .text-group {
-          width: calc(100% - 60px);
-          display: block;
-          margin-left: 66px;
-          padding-right: 10px;
+          flex: 1;
+          min-width: 0;
 
           .name {
             font-weight: 500;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.4;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           .describe {
-            color: var(--el-text-color-secondary);
-            font-size: 12px;
-            margin-top: 4px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            margin-top: 2px;
             line-height: 1.3;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            line-clamp: 1;
-            -webkit-box-orient: vertical;
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
           }
         }
       }
     }
-
-    i {
-      height: 0;
-    }
   }
 }
+
+
 
 .text {
   white-space: nowrap;
@@ -791,58 +940,11 @@ const handleItemClick = (url: string) => {
   text-overflow: ellipsis;
 }
 
-:deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  box-shadow: none !important;
-  transition: all 0.3s ease;
-  height: 48px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  padding-left: 0; 
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
+// 移动端对话框适配
+@media screen and (max-width: 480px) {
+  :deep(.mobile-dialog) {
+    width: 90% !important;
   }
-
-  &.is-focus {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border-color: var(--ui-theme) !important;
-    box-shadow: 0 0 0 1px var(--ui-theme) inset !important;
-  }
-}
-
-:deep(.el-input__inner) {
-  height: 48px;
-  line-height: 48px;
-  font-size: 15px;
-  color: #ffffff !important;
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.45) !important;
-  }
-}
-
-:deep(.el-input__prefix) {
-  padding-left: 8px;
-  margin-right: 0;
-}
-
-:deep(.el-input__suffix) {
-  padding-right: 8px;
-}
-
-:deep(.el-card__body) {
-  padding: 12px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.el-empty {
-  margin: 20px 0;
-  padding: 20px;
-  border-radius: 8px;
 }
 </style>
+

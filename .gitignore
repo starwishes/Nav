@@ -27,3 +27,7 @@ dist-ssr
 .env.local
 .env.development
 .env.production
+
+# Runtime data (keep data/data.json as example)
+data/*
+!data/data.json

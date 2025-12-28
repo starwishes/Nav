@@ -8,9 +8,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import defaultBgImage from '@/assets/default-bg.jpg';
 
 const backgroundUrl = ref('');
-const defaultBg = '/src/assets/img/wallpaper/khadmv.webp';
+const defaultBg = defaultBgImage;
 
 // 获取公开设置
 const fetchSettings = async () => {

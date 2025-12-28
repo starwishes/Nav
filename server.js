@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import { fileURLToPath } from 'url';
 
 // 导入后端核心模块 (从 backend 目录)
@@ -19,6 +20,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3333;
+
+// 信任反向代理，用于正确获取客户端 IP（解决 express-rate-limit 验证问题）
+app.set('trust proxy', 1);
 
 // 1. 系统初始化
 initService.init();
@@ -57,6 +61,9 @@ app.use(cors({
   credentials: true,
 }));
 
+// Gzip 压缩
+app.use(compression());
+
 // 3. 基础解析中间件
 app.use(express.json({ limit: '10mb' }));
 
@@ -89,6 +96,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 StarNav Server v1.1.2 Backend Refactored`);
+  console.log(`\n🚀 StarNav Server v1.3.0`);
   console.log(`   Running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });

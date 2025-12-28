@@ -9,6 +9,16 @@ const router = express.Router();
 const faviconCache = new Map();
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
+// 健康检查端点
+router.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        version: '1.2.2',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
 router.get('/settings', (req, res) => {
     const settings = db.read(SETTINGS_PATH, {});
     res.json({
@@ -30,6 +40,16 @@ router.post('/admin/settings', authenticate, (req, res) => {
     res.json({ success: true });
 });
 
+// 单独设置背景图 URL（不上传文件）
+router.post('/set-background', authenticate, (req, res) => {
+    if (req.user.level < 3) return res.status(403).json({ error: '权限不足' });
+    const { url } = req.body;
+    const settings = db.read(SETTINGS_PATH, {});
+    settings.backgroundUrl = url || '';
+    db.write(SETTINGS_PATH, settings);
+    res.json({ success: true });
+});
+
 router.post('/upload-background', authenticate, (req, res) => {
     try {
         const { data } = req.body;
@@ -48,6 +68,61 @@ router.post('/upload-background', authenticate, (req, res) => {
     } catch (err) {
         logger.error('上传失败', err);
         res.status(500).json({ error: '保存失败' });
+    }
+});
+
+// 获取已上传的文件列表
+router.get('/uploads', authenticate, (req, res) => {
+    if (req.user.level < 3) return res.status(403).json({ error: '权限不足' });
+    try {
+        db.ensureDir(UPLOADS_DIR);
+        const files = fs.readdirSync(UPLOADS_DIR)
+            .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f))
+            .map(filename => {
+                const stat = fs.statSync(path.join(UPLOADS_DIR, filename));
+                return {
+                    filename,
+                    url: `/uploads/${filename}`,
+                    size: stat.size,
+                    uploadedAt: stat.mtime.toISOString()
+                };
+            })
+            .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+        res.json({ files });
+    } catch (err) {
+        logger.error('获取上传列表失败', err);
+        res.json({ files: [] });
+    }
+});
+
+// 删除上传的文件
+router.delete('/uploads/:filename', authenticate, (req, res) => {
+    if (req.user.level < 3) return res.status(403).json({ error: '权限不足' });
+    const { filename } = req.params;
+    const filePath = path.join(UPLOADS_DIR, filename);
+
+    // 安全检查：防止路径遍历
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return res.status(400).json({ error: '无效的文件名' });
+    }
+
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            // 如果删除的是当前背景图，清除设置
+            const settings = db.read(SETTINGS_PATH, {});
+            if (settings.backgroundUrl === `/uploads/${filename}`) {
+                settings.backgroundUrl = '';
+                db.write(SETTINGS_PATH, settings);
+            }
+            logger.info(`文件已删除: ${filename}`);
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: '文件不存在' });
+        }
+    } catch (err) {
+        logger.error('删除文件失败', err);
+        res.status(500).json({ error: '删除失败' });
     }
 });
 

@@ -1,0 +1,87 @@
+{
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "search": "Search",
+        "refresh": "Refresh",
+        "loading": "Loading...",
+        "success": "Success",
+        "error": "Error",
+        "warning": "Warning",
+        "noData": "No data"
+    },
+    "nav": {
+        "home": "Home",
+        "admin": "Admin",
+        "login": "Login",
+        "logout": "Logout",
+        "register": "Register"
+    },
+    "menu": {
+        "dataManage": "Data Management",
+        "profile": "Profile",
+        "sessions": "Sessions",
+        "users": "Users",
+        "stats": "Statistics",
+        "audit": "Audit Log",
+        "settings": "Settings"
+    },
+    "auth": {
+        "username": "Username",
+        "password": "Password",
+        "loginTitle": "Login",
+        "loginSuccess": "Login successful",
+        "loginFailed": "Invalid username or password",
+        "logoutSuccess": "Logged out",
+        "registerTitle": "Register",
+        "registerSuccess": "Registration successful",
+        "passwordTip": "Password must be at least 8 characters with uppercase, lowercase, number and symbol"
+    },
+    "bookmark": {
+        "name": "Name",
+        "url": "URL",
+        "description": "Description",
+        "category": "Category",
+        "tags": "Tags",
+        "clickCount": "Clicks",
+        "addBookmark": "Add Bookmark",
+        "editBookmark": "Edit Bookmark",
+        "deleteConfirm": "Are you sure you want to delete this bookmark?"
+    },
+    "category": {
+        "name": "Category Name",
+        "addCategory": "Add Category",
+        "editCategory": "Edit Category",
+        "deleteConfirm": "Are you sure you want to delete this category?"
+    },
+    "settings": {
+        "enableRegistration": "Enable Registration",
+        "defaultLevel": "Default User Level",
+        "timezone": "Timezone",
+        "background": "Background",
+        "backgroundUrl": "Background URL",
+        "uploadImage": "Upload Image",
+        "saveSettings": "Save Settings"
+    },
+    "session": {
+        "currentDevice": "Current",
+        "revokeOthers": "Revoke Other Devices",
+        "revoke": "Revoke",
+        "ip": "IP Address",
+        "device": "Device",
+        "loginTime": "Login Time",
+        "lastActive": "Last Active"
+    },
+    "stats": {
+        "totalClicks": "Total Clicks",
+        "totalBookmarks": "Total Bookmarks",
+        "totalCategories": "Categories",
+        "totalUsers": "Users",
+        "topBookmarks": "Top 10 Bookmarks",
+        "categoryStats": "Category Statistics"
+    }
+}

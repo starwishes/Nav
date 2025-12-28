@@ -16,16 +16,26 @@ export const DATA_DIR = process.env.DATA_PATH || path.join(ROOT_DIR, 'data');
 export const ACCOUNTS_PATH = path.join(DATA_DIR, 'accounts.json');
 export const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
 export const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+export const AUDIT_LOG_PATH = path.join(DATA_DIR, 'audit.json');
+export const SESSIONS_PATH = path.join(DATA_DIR, 'sessions.json');
 export const JWT_SECRET_PATH = path.join(DATA_DIR, '.jwt_secret');
 
 /**
- * 获取或创建 JWT 密钥
+ * 获取 JWT 密钥
+ * 优先级：环境变量 JWT_SECRET > 文件 .jwt_secret > 自动生成
  */
 export const getOrCreateJwtSecret = () => {
+    // 1. 优先使用环境变量
+    if (process.env.JWT_SECRET) {
+        return process.env.JWT_SECRET;
+    }
+
+    // 2. 尝试从文件读取
     try {
         if (fs.existsSync(JWT_SECRET_PATH)) {
             return fs.readFileSync(JWT_SECRET_PATH, 'utf8').trim();
         }
+        // 3. 自动生成并保存到文件
         const secret = crypto.randomBytes(32).toString('hex');
         fs.writeFileSync(JWT_SECRET_PATH, secret, { mode: 0o600 });
         return secret;

@@ -79,6 +79,25 @@
               <SystemSettings :initialSettings="systemSettings" @save="handleSaveSettings" />
            </el-card>
         </div>
+        
+        <!-- 审计日志 -->
+        <div v-if="currentView === 'audit'" class="audit-view fade-in">
+           <el-card shadow="never" class="glass-card">
+              <AuditLog />
+           </el-card>
+        </div>
+        
+        <!-- 会话管理 -->
+        <div v-if="currentView === 'sessions'" class="sessions-view fade-in">
+           <el-card shadow="never" class="glass-card" style="max-width: 800px;">
+              <SessionManager />
+           </el-card>
+        </div>
+        
+        <!-- 访问统计 -->
+        <div v-if="currentView === 'stats'" class="stats-view fade-in">
+           <StatsDashboard />
+        </div>
       </div>
     </main>
 
@@ -94,7 +113,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAdminStore } from '@/store/admin';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { DataAnalysis, User, Setting, UserFilled } from '@element-plus/icons-vue';
+import { DataAnalysis, User, Setting, UserFilled, List, Lock, TrendCharts } from '@element-plus/icons-vue';
 
 // Composables
 import { useAdminDashboard } from '@/composables/useAdminDashboard';
@@ -109,6 +128,9 @@ import UserTable from '@/components/admin/UserTable.vue';
 import SystemSettings from '@/components/admin/SystemSettings.vue';
 import ProfileSettings from '@/components/admin/ProfileSettings.vue';
 import BookmarkImport from '@/components/admin/BookmarkImport.vue';
+import AuditLog from '@/components/admin/AuditLog.vue';
+import SessionManager from '@/components/admin/SessionManager.vue';
+import StatsDashboard from '@/components/admin/StatsDashboard.vue';
 
 const router = useRouter();
 const adminStore = useAdminStore();
@@ -122,10 +144,13 @@ const menuItems = computed(() => {
   const items = [
     { id: 'data', label: '数据管理', icon: DataAnalysis },
     { id: 'profile', label: '个人中心', icon: UserFilled },
+    { id: 'sessions', label: '会话管理', icon: Lock },
   ];
   if (adminStore.user?.level === 3) {
     items.push(
       { id: 'users', label: '用户管理', icon: User },
+      { id: 'stats', label: '访问统计', icon: TrendCharts },
+      { id: 'audit', label: '审计日志', icon: List },
       { id: 'settings', label: '系统设置', icon: Setting }
     );
   }

@@ -3,13 +3,17 @@ dist
 .git
 .gitignore
 *.md
-docker-compose.yml
+!README.md
+docker-compose*.yml
 .env
 env.example
 .gemini
+
+# Runtime Data & Secrets (new path)
+data/
 .jwt_secret
-# Runtime Data & Secrets
-.jwt_secret
+
+# Legacy paths (keep for safety)
 src/config/accounts.json
 src/config/settings.json
 src/config/users/
