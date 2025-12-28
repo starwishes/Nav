@@ -169,7 +169,7 @@ const {
   categoryForm, itemForm, filteredItems, loadData, handleSave,
   handleAddCategory, handleEditCategory, handleDeleteCategory, saveCategory,
   handleAddItem, handleEditItem, handleDeleteItem, saveItem,
-  handleBatchDelete, handleBatchMove,
+  handleBatchDelete, handleBatchMove, saveDataSync
 } = useAdminDashboard();
 
 // Sidebar logic
@@ -302,6 +302,7 @@ const handleJsonImport = (content: any) => {
   });
 
   ElMessage.success(t('admin.importSuccess', { count: addedCount }) + '. ' + t('admin.importConfirm'));
+  saveDataSync(); // 导入后自动静默同步
 };
 
 // 浏览器书签导入处理
@@ -337,7 +338,8 @@ const handleBookmarkImport = (data: { categories: string[]; items: any[] }) => {
       });
     }
   });
-  ElMessage.success(`导入成功，请点击"保存并同步"生效`);
+  ElMessage.success(`导入成功，现已自动同步并生效`);
+  saveDataSync(); // 导入后自动静默同步
 };
 </script>
 

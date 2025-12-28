@@ -1,11 +1,11 @@
-# 星语导航 (StarNav) v1.3.0
+# 星语导航 (StarNav) v1.3.1
 
 一个极简、美观、功能强大的个人/私有导航系统。
 A minimalist, beautiful, and powerful personal/private navigation system.
 
 **本项目基于开源项目 [CloudNav](https://github.com/sese972010/CloudNav) 进行深度开发与重构，旨在提供更完善的用户权限管理与更精致的 UI 体验。**
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/starwishes/Nav)
+[![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)](https://github.com/starwishes/Nav)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Vue](https://img.shields.io/badge/vue-3.4.29-brightgreen.svg)](https://vuejs.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
@@ -32,15 +32,20 @@ A minimalist, beautiful, and powerful personal/private navigation system.
   - **Docker Compose**：一键拉取镜像部署，数据自动持久化。
   - **安全加固**：后端基于 BCrypt 强力加密，JWT 令牌验证，密钥自动生成。
 
+### 🆕 v1.3.1 更新摘要 (2025-12-28)
+
+- 💾 **数据自动同步**：后台管理面板所有操作（增删改、导入）均已改为自动后台同步，彻底解决由于未点保存导致的数据丢失隐患。
+- 📐 **导航栏对称修正**：修复了分类导航栏在居中对齐时由于占位符导致的整体偏移问题，提升视觉精准度。
+
+<details>
+<summary>点击查看历史更新记录 (View History)</summary>
+
 ### 🆕 v1.3.0 更新摘要 (2025-12-28)
 
 - 🔍 **双模式搜索**：单搜索框集成本地书签搜索与在线搜索引擎切换。
 - 🎯 **搜索引擎管理**：登录后可自定义添加、编辑、删除、排序搜索引擎。
 - 💫 **搜索建议**：在线模式自动获取百度/Google 搜索建议。
 - 🌐 **权限优化**：未登录用户可使用在线搜索但不能修改引擎配置。
-
-<details>
-<summary>点击查看历史更新记录 (View History)</summary>
 
 ### 🆕 v1.2.0 更新摘要 (2025-12-24)
 

@@ -4,9 +4,8 @@
     <main id="js-home-nav__main">
       <ul id="js-home-nav__main-ul">
         <li class="record-item pointer text" v-for="category in store.$state.site" :key="category.id" @click="changeAnchorPosition(category.name)">
-          <div style="width: 100%; height: 100%; text-align: center">{{ category.name }}</div>
+          {{ category.name }}
         </li>
-        <i style="width: 100px" v-for="i in 6" :key="i"></i>
       </ul>
     </main>
   </div>
@@ -89,7 +88,6 @@ const changeAnchorPosition = name => {
         &:hover {
           background: rgba(255, 255, 255, 0.1);
           color: #fff;
-          transform: scale(1.05);
         }
 
         &.active {

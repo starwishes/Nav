@@ -75,7 +75,25 @@ export function useAdminDashboard() {
     }
   };
 
-  // 保存数据
+  // 核心同步逻辑 (静默保存)
+  const saveDataSync = async () => {
+    saving.value = true;
+    try {
+      const content = {
+        categories: categories.value,
+        items: items.value,
+      };
+      await adminStore.updateFileContent(content);
+      // 同步成功后不弹出气泡，避免干扰操作流程，仅在控制台记录
+      console.log('[Sync] Data autosaved successfully');
+    } catch (error: any) {
+      ElMessage.error(t('common.fail') + ': ' + (error.message || 'Unknown error'));
+    } finally {
+      saving.value = false;
+    }
+  };
+
+  // 手动保存数据 (保留确认框，用于手动触发)
   const handleSave = async () => {
     try {
       await ElMessageBox.confirm(
@@ -87,26 +105,13 @@ export function useAdminDashboard() {
           type: 'warning',
         }
       );
-
-      saving.value = true;
-
-      const content = {
-        categories: categories.value,
-        items: items.value,
-      };
-
-      await adminStore.updateFileContent(content);
-
+      await saveDataSync();
       ElMessage.success(t('common.success'));
-
-      // 重新加载数据
       await loadData();
     } catch (error: any) {
       if (error !== 'cancel') {
         ElMessage.error(error.message || t('common.fail'));
       }
-    } finally {
-      saving.value = false;
     }
   };
 
@@ -141,10 +146,8 @@ export function useAdminDashboard() {
         }
       );
 
-      // 删除分类
+      // 插入新位置并同步
       categories.value = categories.value.filter((cat: Category) => cat.id !== row.id);
-
-      // 将该分类下的网站标记为“无分类”（categoryId = 0）
       items.value = items.value.map((item: Item) => {
         if (item.categoryId === row.id) {
           return { ...item, categoryId: 0 };
@@ -153,6 +156,7 @@ export function useAdminDashboard() {
       });
 
       ElMessage.success(t('category.deleteSuccess'));
+      await saveDataSync(); // 自动同步
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error(t('common.fail'));
@@ -177,6 +181,7 @@ export function useAdminDashboard() {
 
     categoryDialogVisible.value = false;
     ElMessage.success(isEdit.value ? t('category.updateSuccess') : t('category.addSuccess'));
+    saveDataSync(); // 自动同步
   };
 
   // 网站操作
@@ -213,6 +218,7 @@ export function useAdminDashboard() {
 
       items.value = items.value.filter((item: Item) => item.id !== row.id);
       ElMessage.success(t('table.deleteSuccess'));
+      await saveDataSync(); // 自动同步
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error(t('common.fail'));
@@ -237,12 +243,14 @@ export function useAdminDashboard() {
 
     itemDialogVisible.value = false;
     ElMessage.success(isEdit.value ? t('category.updateSuccess') : t('category.addSuccess'));
+    saveDataSync(); // 自动同步
   };
 
   // 批量操作
   const handleBatchDelete = (ids: number[]) => {
     items.value = items.value.filter((item: Item) => !ids.includes(item.id));
     ElMessage.success(t('table.deleteSuccess'));
+    saveDataSync(); // 自动同步
   };
 
   const handleBatchMove = (ids: number[], categoryId: number) => {
@@ -253,6 +261,7 @@ export function useAdminDashboard() {
       return item;
     });
     ElMessage.success(t('table.moveSuccess'));
+    saveDataSync(); // 自动同步
   };
 
   return {
@@ -281,5 +290,6 @@ export function useAdminDashboard() {
     saveItem,
     handleBatchDelete,
     handleBatchMove,
+    saveDataSync
   };
 }
