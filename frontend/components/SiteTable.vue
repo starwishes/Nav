@@ -207,6 +207,7 @@ const handleCheckLinks = async () => {
 };
 
 const getCategoryName = (categoryId: number) => {
+  if (categoryId === 0) return '无分类';
   return props.categories.find((cat: Category) => cat.id === categoryId)?.name || t('userLevel.unknown');
 };
 

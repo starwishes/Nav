@@ -31,23 +31,9 @@
       </div>
     </template>
 
-    <div class="theme-toggle admin-menu-item" @click="toggleTheme">
-      <el-icon v-if="themeMode === 'light'"><Moon /></el-icon>
-      <el-icon v-else><Sunny /></el-icon>
+    <div class="lang-toggle admin-menu-item" style="margin-right: 16px;" @click="toggleLang">
+      <span class="translate-icon" v-html="langIcon"></span>
     </div>
-
-    <el-dropdown trigger="click" @command="handleLangCommand">
-      <div class="lang-toggle admin-menu-item">
-        <el-icon><i class="iconfont icon-md-globe" style="font-size: 18px;"></i></el-icon>
-        <span class="admin-text" style="margin-left: 4px;">{{ currentLang }}</span>
-      </div>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item command="zh-CN">简体中文</el-dropdown-item>
-          <el-dropdown-item command="en-US">English</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
   </div>
   <LeftDrawer></LeftDrawer>
   <LoginDialog v-model="showLoginDialog" />
@@ -63,7 +49,7 @@ import LoginDialog from '@/components/admin/LoginDialog.vue';
 import { useMainStore } from '@/store';
 import { useAdminStore } from '@/store/admin';
 import { ElMessage } from 'element-plus';
-import { Moon, Sunny } from '@element-plus/icons-vue';
+import { Moon, Sunny, ArrowDown } from '@element-plus/icons-vue';
 
 const { t } = useI18n();
 
@@ -75,14 +61,14 @@ const scrollHeight = ref(0);
 const showLoginDialog = ref(false);
 const themeMode = ref('light');
 
-const currentLang = computed(() => {
-  return getLocale() === 'zh-CN' ? '简体中文' : 'English';
+const langIcon = computed(() => {
+  return getLocale() === 'zh-CN' ? '文<sub>A</sub>' : 'A<sub>文</sub>';
 });
 
-const handleLangCommand = (command) => {
-  if (command === getLocale()) return;
-  setLocale(command);
-  ElMessage.success(command === 'zh-CN' ? '已切换至中文' : 'Switched to English');
+const toggleLang = () => {
+  const newLang = getLocale() === 'zh-CN' ? 'en-US' : 'zh-CN';
+  setLocale(newLang);
+  ElMessage.success(newLang === 'zh-CN' ? '已切换至中文' : 'Switched to English');
 };
 
 const toggleTheme = () => {
@@ -169,10 +155,11 @@ onUnmounted(() => {
   top: 0;
   right: 0;
   width: 100%;
+  box-sizing: border-box;
   display: flex;
   height: 75px;
   line-height: 75px;
-  padding: 0 24px;
+  padding: 0 30px 0 24px;
   background-color: transparent;
   z-index: 999;
   color: #fff;
@@ -275,5 +262,21 @@ onUnmounted(() => {
       background-color: var(--gray-o1);
     }
   }
+}
+
+.translate-icon {
+  font-size: 16px;
+  font-weight: 500;
+  color: inherit;
+  sub {
+    font-size: 12px;
+    margin-left: 1px;
+  }
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  margin-left: 2px;
+  opacity: 0.7;
 }
 </style>

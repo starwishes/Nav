@@ -158,16 +158,29 @@ defineEmits<{
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 30, 30, 0.6); // Much darker base for better contrast
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-:root[theme-mode='dark'] {
-  .site-card {
-    .site-name { color: #eee; }
-    .site-desc { color: #888; }
+
+
+// Global overrides to ensure contrast on dark glass background
+.site-card {
+  .site-name { 
+    color: #ffffff !important; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
   }
+  .site-desc { 
+    color: #dddddd !important; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+}
+
+.glass-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .inherit-text {

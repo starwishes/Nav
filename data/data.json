@@ -23,7 +23,9 @@
       "url": "https://www.google.com",
       "description": "全球最大的搜索引擎",
       "categoryId": 1,
-      "pinned": true
+      "pinned": false,
+      "clickCount": 2,
+      "lastVisited": "2025-12-28T13:07:33.789Z"
     },
     {
       "id": 2,
@@ -39,7 +41,9 @@
       "url": "https://www.bilibili.com",
       "description": "年轻人的视频社区",
       "categoryId": 1,
-      "pinned": false
+      "pinned": false,
+      "clickCount": 2,
+      "lastVisited": "2025-12-28T13:33:27.076Z"
     },
     {
       "id": 4,

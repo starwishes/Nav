@@ -5,17 +5,9 @@
       <h2 class="view-title">{{ currentViewLabel }}</h2>
     </div>
     <div class="header-actions">
-      <el-dropdown trigger="click" @command="handleLangCommand" class="lang-dropdown">
-        <el-button plain class="hover-scale">
-          <i class="iconfont icon-md-globe" style="margin-right: 4px;"></i> {{ currentLang }}
-        </el-button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="zh-CN">简体中文</el-dropdown-item>
-            <el-dropdown-item command="en-US">English</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+      <el-button plain class="hover-scale lang-btn" @click="toggleLang">
+        <span v-html="langIcon"></span>
+      </el-button>
 
       <el-button @click="$emit('go-home')" plain class="hover-scale">
         <el-icon><HomeFilled /></el-icon> {{ t('nav.home') }}
@@ -36,15 +28,14 @@ import { computed } from 'vue';
 
 const { t } = useI18n();
 
-const currentLang = computed(() => {
-  return getLocale() === 'zh-CN' ? '简体中文' : 'English';
+const langIcon = computed(() => {
+  return getLocale() === 'zh-CN' ? '文<sub>A</sub>' : 'A<sub>文</sub>';
 });
 
-const handleLangCommand = (command: string | number | object) => {
-  const lang = command as 'zh-CN' | 'en-US';
-  if (lang === getLocale()) return;
-  setLocale(lang);
-  ElMessage.success(lang === 'zh-CN' ? '已切换至中文' : 'Switched to English');
+const toggleLang = () => {
+  const newLang = getLocale() === 'zh-CN' ? 'en-US' : 'zh-CN';
+  setLocale(newLang);
+  ElMessage.success(newLang === 'zh-CN' ? '已切换至中文' : 'Switched to English');
 };
 
 defineProps<{

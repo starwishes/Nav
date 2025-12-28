@@ -44,7 +44,10 @@ const changeAnchorPosition = name => {
   z-index: 100;
   width: calc(100% - 40px);
   max-width: 1200px;
-  margin: 280px auto 30px auto;
+  margin: 20px auto 30px auto;
+  transform: translateZ(0); 
+  will-change: backdrop-filter; // 稳定硬件加速
+  user-select: none; // 禁用选择，根除选择变色
   padding: 10px 24px;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.03);
@@ -52,9 +55,10 @@ const changeAnchorPosition = name => {
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 100px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
+  border-radius: 100px;
+  // 极致静态化：移除 transition, box-shadow，固化背景亮度
+  // 仅通过文字颜色或激活状态指示
+  
   main {
     width: 100%;
     

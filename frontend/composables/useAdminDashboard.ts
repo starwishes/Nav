@@ -127,18 +127,10 @@ export function useAdminDashboard() {
     categoryDialogVisible.value = true;
   };
 
-  const getItemCountByCategory = (categoryId: number) => {
-    return items.value.filter((item: Item) => item.categoryId === categoryId).length;
-  };
+
 
   const handleDeleteCategory = async (row: Category) => {
     try {
-      const count = getItemCountByCategory(row.id);
-      if (count > 0) {
-        ElMessage.warning(`该分类下还有 ${count} 个网站，请先删除网站`);
-        return;
-      }
-
       await ElMessageBox.confirm(
         t('category.deleteConfirm'),
         t('common.delete'),
@@ -149,7 +141,17 @@ export function useAdminDashboard() {
         }
       );
 
+      // 删除分类
       categories.value = categories.value.filter((cat: Category) => cat.id !== row.id);
+
+      // 将该分类下的网站标记为“无分类”（categoryId = 0）
+      items.value = items.value.map((item: Item) => {
+        if (item.categoryId === row.id) {
+          return { ...item, categoryId: 0 };
+        }
+        return item;
+      });
+
       ElMessage.success(t('category.deleteSuccess'));
     } catch (error) {
       if (error !== 'cancel') {

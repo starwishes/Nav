@@ -9,13 +9,7 @@
       @clear-tags="clearTags"
     />
 
-    <!-- 热门书签展示 (已组件化) -->
-    <HotBookmarksBar 
-      v-if="!loading" 
-      :top-bookmarks="topBookmarks" 
-      :loading="loading"
-      @item-click="handleItemClick"
-    />
+    <!-- 热门书签已移除 -->
 
     <!-- Loading / Empty State -->
     <div v-if="loading" class="site-container loading-state">
@@ -179,7 +173,6 @@ import { openUrl as utilsOpenUrl } from '@/utils'
 
 // Components
 import TagFilterBar from './TagFilterBar.vue'
-import HotBookmarksBar from './HotBookmarksBar.vue'
 import SiteCard from './SiteCard.vue'
 import SiteDialog from '@/components/SiteDialog.vue'
 
@@ -225,9 +218,12 @@ const dataValue = computed(() => {
     });
   });
 
-  return pinnedItems.length > 0 
-    ? [{ id: -1, name: t('site.pinnedCategory'), content: pinnedItems, isVirtual: true }, ...filtered]
+  // 统一数据结构，不再使用 isVirtual 标记，让渲染路径完全一致
+  const result = pinnedItems.length > 0 
+    ? [{ id: -1, name: t('site.pinnedCategory'), content: pinnedItems, private: false }, ...filtered]
     : filtered;
+
+  return result;
 });
 
 // --- 标签与热门逻辑 ---
@@ -256,6 +252,9 @@ const topBookmarks = computed(() => {
 })
 
 // --- API 调用逻辑 ---
+
+// Define emits
+const emit = defineEmits(['loaded']);
 
 const loadData = async () => {
   loading.value = true
@@ -286,7 +285,10 @@ const loadData = async () => {
       }));
     }
   } catch (err) { console.error('Load Error', err) }
-  finally { loading.value = false }
+  finally { 
+    loading.value = false;
+    emit('loaded');
+  }
 }
 
 const saveData = async () => {
@@ -384,7 +386,9 @@ const showContextMenu = (e, item, catIdx, itemIdx) => {
   Object.assign(contextMenu, { visible: true, x: e.clientX, y: e.clientY, item, category: null, catIndex: catIdx, itemIndex: itemIdx });
 }
 const showCategoryContextMenu = (e, category, catIdx) => {
-  if (!adminStore.isAuthenticated || category.isVirtual) return;
+  if (!adminStore.isAuthenticated) return;
+  // 置顶分类（ID 为 -1）不支持排序和隐私设置修改
+  if (category.id === -1) return;
   e.preventDefault();
   Object.assign(contextMenu, { visible: true, x: e.clientX, y: e.clientY, item: null, category, catIndex: catIdx });
 }
@@ -471,24 +475,28 @@ watch(dataValue, (val) => store.$state.site = val, { immediate: true });
 .home-site {
   padding: 20px;
   min-height: calc(100vh - 120px);
+  user-select: none; // 全局禁用选择，根除变色诱因
 }
 
 .category-section {
   margin-bottom: 40px;
   .site-item {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(0, 0, 0, 0.15) !important; // lighter base
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 20px;
     padding: 24px;
-    transition: all 0.3s ease;
+    border-radius: 20px;
+    padding: 24px;
     margin-bottom: 20px;
+    
+    // Force GPU layer to prevent backdrop-filter flicker
+    // Force GPU layer to prevent backdrop-filter flicker
+    transform: translateZ(0); 
+    will-change: backdrop-filter;
 
-    &:hover {
-      background: rgba(255, 255, 255, 0.06) !important;
-      border-color: rgba(255, 255, 255, 0.25) !important;
-    }
+    // 移除容器级 hover，防止干扰全局
   }
 
   .category-header {
@@ -588,8 +596,14 @@ ul {
   }
 }
 
+// Category Title - Always White for Contrast
+.category-title { 
+  color: #ffffff !important; 
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  font-weight: 600;
+}
+
 :root[theme-mode='dark'] {
-  .category-title { color: #eee !important; }
   .context-menu { background: rgba(30, 30, 30, 0.9); border-color: rgba(255, 255, 255, 0.1); .menu-item { color: #ccc; } }
 }
 </style>

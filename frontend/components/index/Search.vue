@@ -434,7 +434,7 @@ const performLocalSearch = async () => {
     const keyword = searchText.value.toLowerCase()
     const filteredItems = data.content.items.filter((item: any) => {
       if (!adminStore.isAuthenticated && item.private) return false
-      if (item.level && item.level > (adminStore.userLevel || 0)) return false
+      if (item.level !== undefined && item.level > (adminStore.user?.level || 0)) return false
       
       const nameMatch = item.name?.toLowerCase().includes(keyword)
       const descMatch = item.description?.toLowerCase().includes(keyword)
@@ -491,20 +491,18 @@ const handleItemClick = (url: string) => {
 
 <style lang="scss" scoped>
 .search-container {
-  position: absolute;
-  top: 120px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  margin: 120px auto 20px;
   width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 16px;
-  z-index: 99;
+  z-index: 10;
+  user-select: none; // 强制禁止选择，防止变色
 }
 
 .search-wrapper {
   position: relative;
   width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 .unified-search-box {
@@ -515,19 +513,20 @@ const handleItemClick = (url: string) => {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   padding: 4px;
-  transition: all 0.3s ease;
+  margin: 16px; 
+  
+  // 极致静态化：移除 transition、box-shadow 和动态背景
+  // 防止引发 backdrop-filter 的亮度重算
   
   &:hover {
-    border-color: rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1); // 保持一致
   }
   
   &:focus-within {
     border-color: var(--el-color-primary);
-    box-shadow: 0 0 0 3px rgba(var(--el-color-primary-rgb), 0.15),
-                0 8px 32px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.1); // 保持一致
   }
 }
 
@@ -557,7 +556,6 @@ const handleItemClick = (url: string) => {
   &.active {
     background: var(--el-color-primary);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(var(--el-color-primary-rgb), 0.4);
   }
   
   &.disabled {
@@ -799,7 +797,8 @@ const handleItemClick = (url: string) => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   padding: 12px;
   z-index: 9999;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto; // 确保结果列表可交互
+  transition: opacity 0.2s ease;
 
   &.empty {
     padding: 20px;

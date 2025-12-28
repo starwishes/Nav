@@ -31,3 +31,10 @@ dist-ssr
 # Runtime data (keep data/data.json as example)
 data/*
 !data/data.json
+
+# Debug files
+server_dump.txt
+
+# Runtime config data (not source code)
+frontend/config/*.json
+frontend/config/.jwt_secret

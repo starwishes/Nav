@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 import { useMainStore } from '@/store'
 import PageHeader from '@/components/index/PageHeader.vue'
 import Background from '@/components/index/Background.vue'
@@ -10,9 +10,35 @@ import Sidebar from '@/components/index/Sidebar.vue'
 import Footer from '@/components/index/Footer.vue'
 
 const store = useMainStore()
+const isReady = ref(false)
+const siteLoaded = ref(false)
+const settingsLoaded = ref(false)
 
-onMounted(() => {
-  store.fetchSettings()
+const checkReady = () => {
+  if (siteLoaded.value && settingsLoaded.value) {
+    // 确保 DOM 更新且浏览器完成重绘（包括毛玻璃效果渲染）
+    nextTick(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // 额外添加延时，确保复杂 CSS 效果（尤其是毛玻璃）完全稳定
+          setTimeout(() => {
+            isReady.value = true
+          }, 200)
+        })
+      })
+    })
+  }
+}
+
+const onSiteLoaded = () => {
+  siteLoaded.value = true
+  checkReady()
+}
+
+onMounted(async () => {
+  await store.fetchSettings()
+  settingsLoaded.value = true
+  checkReady()
 })
 
 </script>
@@ -22,12 +48,12 @@ onMounted(() => {
     <!-- 背景 -->
     <Background></Background>
     <!-- 主要内容 -->
-    <section class="content">
+    <section class="content" :class="{ 'is-ready': isReady }">
       <PageHeader></PageHeader>
       <main ref="homeContent" class="home-content">
         <Search></Search>
         <Anchor></Anchor>
-        <Site></Site>
+        <Site @loaded="onSiteLoaded"></Site>
         <Footer></Footer>
         <Sidebar></Sidebar>
         <!-- 空内容展示 -->
@@ -41,10 +67,21 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  user-select: none; // 全局禁用，根治毛玻璃选区变色
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   .content {
     width: 100%;
     height: 100%;
     z-index: 1;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    
+    &.is-ready {
+      opacity: 1;
+    }
+
     .home-content {
       position: relative;
       width: 100%;
