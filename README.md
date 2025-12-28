@@ -1,11 +1,11 @@
-# 星语导航 (StarNav) v1.3.2
+# 星语导航 (StarNav) v1.3.3
 
 一个极简、美观、功能强大的个人/私有导航系统。
 A minimalist, beautiful, and powerful personal/private navigation system.
 
 **本项目基于开源项目 [CloudNav](https://github.com/sese972010/CloudNav) 进行深度开发与重构，旨在提供更完善的用户权限管理与更精致的 UI 体验。**
 
-[![Version](https://img.shields.io/badge/version-1.3.2-blue.svg)](https://github.com/starwishes/Nav)
+[![Version](https://img.shields.io/badge/version-1.3.3-blue.svg)](https://github.com/starwishes/Nav)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Vue](https://img.shields.io/badge/vue-3.4.29-brightgreen.svg)](https://vuejs.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
@@ -32,18 +32,19 @@ A minimalist, beautiful, and powerful personal/private navigation system.
   - **Docker Compose**：一键拉取镜像部署，数据自动持久化。
   - **安全加固**：后端基于 BCrypt 强力加密，JWT 令牌验证，密钥自动生成。
 
-### 🆕 v1.3.2 更新摘要 (2025-12-28)
+### 🆕 v1.3.3 更新摘要 (2025-12-28)
 
-- � **持久化路径精准路由**：重构了后端数据定位逻辑。现在系统能自动识别自定义的 `ADMIN_USERNAME` 环境变量，并将其数据精准映射到公共访问的 `data.json`，解决了退出登录后显示默认旧页面的逻辑偏差。
-- 🤝 **前后端协议对齐**：前端移除了数据请求中的硬编码参数，全面交由后端根据系统状态进行动态分发。
+- 🛡️ **数据全量迁移保护**：引入智能迁移引擎。当更新容器或修改管理员名称后，系统会自动检测并搬迁存量数据文件，彻底杜绝“版本升级导致数据丢失”的问题。
+- 🔗 **持久化路径精准路由**：重构后端定位逻辑，主管理员数据始终同步至全局可见的 `data.json`。
 
 <details>
 <summary>点击查看历史更新记录 (View History)</summary>
 
-### 🆕 v1.3.1 更新摘要 (2025-12-28)
+### 🆕 v1.3.x 历史优化记录
 
-- 💾 **数据自动同步**：后台管理面板所有操作（增删改、导入）均已改为自动后台同步。
-- 📐 **导航栏对称修正**：修复了分类导航栏在居中对齐时的非对称几何偏移。
+- 💾 **数据自动同步**：后台所有写操作（增删改、导入）均已改为自动静默同步。
+- 📐 **导航栏对称修正**：修复分类导航栏在居中对齐时的物理几何偏移。
+- 🔍 **双模式搜索**：集成本地书签与在线搜索引擎。
 
 ### 🆕 v1.3.0 更新摘要 (2025-12-28)
 
