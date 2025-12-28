@@ -2,9 +2,11 @@ import { ref, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAdminStore } from '@/store/admin';
 import { Category, Item } from '@/types';
+import { useI18n } from 'vue-i18n';
 
 export function useAdminDashboard() {
   const adminStore = useAdminStore();
+  const { t } = useI18n();
 
   const loading = ref(false);
   const saving = ref(false);
@@ -64,10 +66,10 @@ export function useAdminDashboard() {
           seenIds.add(item.id);
           return true;
         });
-        ElMessage.success('数据加载成功');
+        ElMessage.success(t('notification.dataLoaded'));
       }
     } catch (error: any) {
-      ElMessage.error(error.message || '加载数据失败');
+      ElMessage.error(error.message || t('common.error'));
     } finally {
       loading.value = false;
     }
@@ -77,11 +79,11 @@ export function useAdminDashboard() {
   const handleSave = async () => {
     try {
       await ElMessageBox.confirm(
-        '确定要保存修改吗？',
-        '确认操作',
+        t('common.confirm'),
+        t('common.warning'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
           type: 'warning',
         }
       );
@@ -95,13 +97,13 @@ export function useAdminDashboard() {
 
       await adminStore.updateFileContent(content);
 
-      ElMessage.success('保存成功');
+      ElMessage.success(t('common.success'));
 
       // 重新加载数据
       await loadData();
     } catch (error: any) {
       if (error !== 'cancel') {
-        ElMessage.error(error.message || '保存失败');
+        ElMessage.error(error.message || t('common.fail'));
       }
     } finally {
       saving.value = false;
@@ -138,27 +140,27 @@ export function useAdminDashboard() {
       }
 
       await ElMessageBox.confirm(
-        `确定要删除分类「${row.name}」吗？`,
-        '确认删除',
+        t('category.deleteConfirm'),
+        t('common.delete'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
           type: 'warning',
         }
       );
 
       categories.value = categories.value.filter((cat: Category) => cat.id !== row.id);
-      ElMessage.success('删除成功');
+      ElMessage.success(t('category.deleteSuccess'));
     } catch (error) {
       if (error !== 'cancel') {
-        ElMessage.error('删除失败');
+        ElMessage.error(t('common.fail'));
       }
     }
   };
 
   const saveCategory = () => {
     if (!categoryForm.value.name) {
-      ElMessage.warning('请输入分类名称');
+      ElMessage.warning(t('category.placeholderName'));
       return;
     }
 
@@ -172,7 +174,7 @@ export function useAdminDashboard() {
     }
 
     categoryDialogVisible.value = false;
-    ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
+    ElMessage.success(isEdit.value ? t('category.updateSuccess') : t('category.addSuccess'));
   };
 
   // 网站操作
@@ -198,27 +200,27 @@ export function useAdminDashboard() {
   const handleDeleteItem = async (row: Item) => {
     try {
       await ElMessageBox.confirm(
-        `确定要删除网站「${row.name}」吗？`,
-        '确认删除',
+        t('table.deleteConfirm', { count: 1 }),
+        t('common.delete'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
           type: 'warning',
         }
       );
 
       items.value = items.value.filter((item: Item) => item.id !== row.id);
-      ElMessage.success('删除成功');
+      ElMessage.success(t('table.deleteSuccess'));
     } catch (error) {
       if (error !== 'cancel') {
-        ElMessage.error('删除失败');
+        ElMessage.error(t('common.fail'));
       }
     }
   };
 
   const saveItem = () => {
     if (!itemForm.value.name || !itemForm.value.url || !itemForm.value.categoryId) {
-      ElMessage.warning('请填写完整信息');
+      ElMessage.warning(t('common.tips'));
       return;
     }
 
@@ -232,13 +234,13 @@ export function useAdminDashboard() {
     }
 
     itemDialogVisible.value = false;
-    ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
+    ElMessage.success(isEdit.value ? t('category.updateSuccess') : t('category.addSuccess'));
   };
 
   // 批量操作
   const handleBatchDelete = (ids: number[]) => {
     items.value = items.value.filter((item: Item) => !ids.includes(item.id));
-    ElMessage.success('批量删除成功');
+    ElMessage.success(t('table.deleteSuccess'));
   };
 
   const handleBatchMove = (ids: number[], categoryId: number) => {
@@ -248,7 +250,7 @@ export function useAdminDashboard() {
       }
       return item;
     });
-    ElMessage.success('批量移动成功');
+    ElMessage.success(t('table.moveSuccess'));
   };
 
   return {

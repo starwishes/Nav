@@ -53,7 +53,7 @@
         <!-- 用户管理 (已组件化) -->
         <div v-if="currentView === 'users'" class="users-view fade-in">
            <el-card shadow="never" class="glass-card">
-              <template #header><span>用户管理 (管理员)</span></template>
+              <template #header><span>{{ t('admin.userManagement') }}</span></template>
               <UserTable 
                 :users="users" 
                 @update-level="handleUpdateUserLevel" 
@@ -67,7 +67,7 @@
         <!-- 个人资料 (已组件化) -->
         <div v-if="currentView === 'profile'" class="profile-view fade-in">
            <el-card shadow="never" class="glass-card" style="max-width: 600px;">
-              <template #header><span>个人资料设置</span></template>
+              <template #header><span>{{ t('profile.settings') }}</span></template>
               <ProfileSettings :username="adminStore.user?.login || ''" :level="adminStore.user?.level || 0" @update="handleUpdateProfile" />
            </el-card>
         </div>
@@ -75,7 +75,7 @@
         <!-- 系统设置 (已组件化) -->
         <div v-if="currentView === 'settings'" class="settings-view fade-in">
            <el-card shadow="never" class="glass-card" style="max-width: 600px;">
-              <template #header><span>系统配置 (管理员)</span></template>
+              <template #header><span>{{ t('admin.systemConfig') }}</span></template>
               <SystemSettings :initialSettings="systemSettings" @save="handleSaveSettings" />
            </el-card>
         </div>
@@ -114,6 +114,7 @@ import { useRouter } from 'vue-router';
 import { useAdminStore } from '@/store/admin';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { DataAnalysis, User, Setting, UserFilled, List, Lock, TrendCharts } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
 
 // Composables
 import { useAdminDashboard } from '@/composables/useAdminDashboard';
@@ -132,6 +133,7 @@ import AuditLog from '@/components/admin/AuditLog.vue';
 import SessionManager from '@/components/admin/SessionManager.vue';
 import StatsDashboard from '@/components/admin/StatsDashboard.vue';
 
+const { t } = useI18n();
 const router = useRouter();
 const adminStore = useAdminStore();
 const currentView = ref('data');
@@ -142,23 +144,23 @@ const showBookmarkImport = ref(false);
 
 const menuItems = computed(() => {
   const items = [
-    { id: 'data', label: '数据管理', icon: DataAnalysis },
-    { id: 'profile', label: '个人中心', icon: UserFilled },
-    { id: 'sessions', label: '会话管理', icon: Lock },
+    { id: 'data', label: t('menu.dataManage'), icon: DataAnalysis },
+    { id: 'profile', label: t('menu.profile'), icon: UserFilled },
+    { id: 'sessions', label: t('menu.sessions'), icon: Lock },
   ];
   if (adminStore.user?.level === 3) {
     items.push(
-      { id: 'users', label: '用户管理', icon: User },
-      { id: 'stats', label: '访问统计', icon: TrendCharts },
-      { id: 'audit', label: '审计日志', icon: List },
-      { id: 'settings', label: '系统设置', icon: Setting }
+      { id: 'users', label: t('menu.users'), icon: User },
+      { id: 'stats', label: t('menu.stats'), icon: TrendCharts },
+      { id: 'audit', label: t('menu.audit'), icon: List },
+      { id: 'settings', label: t('menu.settings'), icon: Setting }
     );
   }
   return items;
 });
 
 const currentViewLabel = computed(() => {
-  return menuItems.value.find(m => m.id === currentView.value)?.label || '管理面板';
+  return menuItems.value.find(m => m.id === currentView.value)?.label || t('admin.dashboard');
 });
 
 const {
@@ -179,10 +181,10 @@ const handleMenuClick = (id: string) => {
 };
 
 const handleLogout = () => {
-  ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
+  ElMessageBox.confirm(t('admin.confirmLogout'), t('common.warning'), { type: 'warning' }).then(() => {
     adminStore.clearAuth();
     router.push('/');
-    ElMessage.success('已退出登录');
+    ElMessage.success(t('admin.logoutMessage'));
   });
 };
 
@@ -199,51 +201,51 @@ const fetchSettings = async () => {
 const handleUpdateUserLevel = async (username: string, level: number) => {
   const res = await adminStore.updateUser(username, { level });
   if (res.success) {
-    ElMessage.success('等级更新成功');
+    ElMessage.success(t('admin.updateSuccess'));
     fetchUserList();
   } else {
-    ElMessage.error(res.error || '更新失败');
+    ElMessage.error(res.error || t('admin.operationFailed'));
   }
 };
 
 const handleAddUser = async (userData: any) => {
   const res = await adminStore.addUser(userData);
   if (res.success) {
-    ElMessage.success('用户添加成功');
+    ElMessage.success(t('admin.addSuccess'));
     fetchUserList();
   } else {
-    ElMessage.error(res.error || '添加失败');
+    ElMessage.error(res.error || t('admin.operationFailed'));
   }
 };
 
 const handleDeleteUser = async (username: string) => {
   const res = await adminStore.deleteUser(username);
   if (res.success) {
-    ElMessage.success('用户已删除');
+    ElMessage.success(t('admin.deleteSuccess'));
     fetchUserList();
   } else {
-    ElMessage.error(res.error || '删除失败');
+    ElMessage.error(res.error || t('admin.operationFailed'));
   }
 };
 
 const handleUpdateUser = async (oldUsername: string, updateData: any) => {
   const res = await adminStore.updateUser(oldUsername, updateData);
   if (res.success) {
-    ElMessage.success('信息更新成功');
+    ElMessage.success(t('admin.updateSuccess'));
     fetchUserList();
   } else {
-    ElMessage.error(res.error || '修改失败');
+    ElMessage.error(res.error || t('admin.operationFailed'));
   }
 };
 
 const handleSaveSettings = async (newSettings: any) => {
   const res = await adminStore.updateAdminSettings(newSettings);
-  if (res.success) ElMessage.success('系统设置已保存');
+  if (res.success) ElMessage.success(t('settings.saveSettings') + ' ' + t('common.success'));
 };
 
 const handleUpdateProfile = async (profileData: any) => {
   const res = await adminStore.updateProfile(profileData);
-  if (res.success) ElMessage.success('资料更新成功');
+  if (res.success) ElMessage.success(t('admin.updateSuccess'));
 };
 
 // Responsive
@@ -259,7 +261,7 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile));
 
 const handleJsonImport = (content: any) => {
   if (!content.categories || !content.items) {
-    ElMessage.error('JSON 格式不正确');
+    ElMessage.error(t('admin.jsonError'));
     return;
   }
   
@@ -299,7 +301,7 @@ const handleJsonImport = (content: any) => {
     }
   });
 
-  ElMessage.success(`智能合并完成：新增 ${addedCount} 个网站。点击"保存并同步"生效。`);
+  ElMessage.success(t('admin.importSuccess', { count: addedCount }) + '. ' + t('admin.importConfirm'));
 };
 
 // 浏览器书签导入处理

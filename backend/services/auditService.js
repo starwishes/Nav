@@ -12,7 +12,10 @@ export const auditService = {
      */
     log(action, data) {
         try {
-            const logs = db.read(AUDIT_LOG_PATH, []);
+            let logs = db.read(AUDIT_LOG_PATH, []);
+            if (!Array.isArray(logs)) {
+                logs = [];
+            }
             const entry = {
                 id: Date.now(),
                 action,
@@ -39,7 +42,8 @@ export const auditService = {
      * 获取审计日志（分页）
      */
     getAll(page = 1, limit = 50) {
-        const logs = db.read(AUDIT_LOG_PATH, []);
+        let logs = db.read(AUDIT_LOG_PATH, []);
+        if (!Array.isArray(logs)) logs = [];
         const start = (page - 1) * limit;
         return {
             logs: logs.slice(start, start + limit),
@@ -55,5 +59,18 @@ export const auditService = {
     getByUsername(username) {
         const logs = db.read(AUDIT_LOG_PATH, []);
         return logs.filter(log => log.username === username);
+    },
+
+    /**
+     * 清空审计日志
+     */
+    clear() {
+        try {
+            db.write(AUDIT_LOG_PATH, []);
+            return true;
+        } catch (err) {
+            logger.error('清空审计日志失败', err);
+            return false;
+        }
     }
 };

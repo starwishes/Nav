@@ -22,15 +22,15 @@
     
     <div class="login-content">
       <div class="login-tabs">
-        <span :class="{ active: mode === 'login' }" @click="mode = 'login'">登录</span>
-        <span v-if="registrationEnabled" :class="{ active: mode === 'register' }" @click="mode = 'register'">注册</span>
+        <span :class="{ active: mode === 'login' }" @click="mode = 'login'">{{ t('nav.login') }}</span>
+        <span v-if="registrationEnabled" :class="{ active: mode === 'register' }" @click="mode = 'register'">{{ t('nav.register') }}</span>
       </div>
 
       <el-form :model="loginForm" @submit.prevent="handleSubmit">
         <el-form-item>
           <el-input 
             v-model="loginForm.username" 
-            placeholder="用户名" 
+            :placeholder="t('auth.username')" 
             prefix-icon="User"
           />
         </el-form-item>
@@ -38,7 +38,7 @@
           <el-input 
             v-model="loginForm.password" 
             type="password" 
-            placeholder="密码" 
+            :placeholder="t('auth.password')" 
             prefix-icon="Lock"
             show-password
           />
@@ -50,13 +50,13 @@
           :loading="loading"
           class="login-btn"
         >
-          {{ mode === 'login' ? '登录' : '立即注册' }}
+          {{ mode === 'login' ? t('nav.login') : t('nav.register') }}
         </el-button>
       </el-form>
       
       <p class="notice">
         <el-icon><InfoFilled /></el-icon>
-        {{ mode === 'login' ? '请输入账号密码访问' : '创建一个新账户以保存自己的导航数据' }}
+        {{ mode === 'login' ? t('auth.loginNotice') : t('auth.registerNotice') }}
       </p>
     </div>
   </el-dialog>
@@ -67,6 +67,9 @@ import { ref, computed, reactive, onMounted } from 'vue';
 import { useAdminStore } from '@/store/admin';
 import { ElMessage } from 'element-plus';
 import { InfoFilled } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: boolean;
@@ -111,7 +114,7 @@ onMounted(() => {
 
 const handleSubmit = async () => {
   if (!loginForm.username || !loginForm.password) {
-    ElMessage.warning('请输入用户名和密码');
+    ElMessage.warning(t('auth.loginFailed')); // Use a generic warning or add specific key if needed, reused loginFailed for now or add new
     return;
   }
 
@@ -120,22 +123,22 @@ const handleSubmit = async () => {
     if (mode.value === 'login') {
       const result = await adminStore.login(loginForm.username, loginForm.password);
       if (result.success) {
-        ElMessage.success('登录成功');
+        ElMessage.success(t('auth.loginSuccess'));
         emit('update:modelValue', false);
       } else {
-        ElMessage.error(result.error || '登录失败');
+        ElMessage.error(result.error || t('auth.loginFailed'));
       }
     } else {
       const result = await adminStore.register(loginForm.username, loginForm.password);
       if (result.success) {
-        ElMessage.success('注册成功，请登录');
+        ElMessage.success(t('auth.registerSuccess'));
         mode.value = 'login';
       } else {
-        ElMessage.error(result.error || '注册失败');
+        ElMessage.error(result.error || t('admin.operationFailed'));
       }
     }
   } catch (error: any) {
-    ElMessage.error(error.message || '操作失败');
+    ElMessage.error(error.message || t('admin.operationFailed'));
   } finally {
     loading.value = false;
   }

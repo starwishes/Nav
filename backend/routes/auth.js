@@ -165,6 +165,16 @@ router.get('/admin/audit', authenticate, (req, res) => {
     res.json(auditService.getAll(page, limit));
 });
 
+// 管理员清空审计日志
+router.delete('/admin/audit', authenticate, (req, res) => {
+    if (req.user.level < 3) return res.status(403).json({ error: '权限不足' });
+    if (auditService.clear()) {
+        res.json({ success: true });
+    } else {
+        res.status(500).json({ error: '清空失败' });
+    }
+});
+
 router.get('/admin/users', authenticate, (req, res) => {
     if (req.user.level < 3) return res.status(403).json({ error: '权限不足' });
     res.json(accountService.getAll());

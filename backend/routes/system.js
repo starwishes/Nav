@@ -24,7 +24,10 @@ router.get('/settings', (req, res) => {
     res.json({
         registrationEnabled: settings.registrationEnabled,
         backgroundUrl: settings.backgroundUrl || '',
-        timezone: settings.timezone || ''
+        timezone: settings.timezone || '',
+        homeUrl: settings.homeUrl || '',
+        footerHtml: settings.footerHtml || '',
+        siteName: settings.siteName || ''
     });
 });
 

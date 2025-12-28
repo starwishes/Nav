@@ -1,13 +1,13 @@
 ﻿<template>
   <el-dialog 
     v-model="visible" 
-    :title="form.id && isEdit ? '编辑网站' : '添加网站'"
+    :title="form.id && isEdit ? t('site.edit') : t('site.add')"
     width="600px"
     class="mobile-dialog"
     @close="$emit('update:modelValue', false)"
   >
     <el-form :model="form" label-width="100px">
-      <el-form-item label="网站 ID">
+      <el-form-item :label="t('site.id')">
         <el-input-number 
           v-model="form.id" 
           :min="1" 
@@ -15,25 +15,25 @@
         />
       </el-form-item>
 
-      <el-form-item label="网站名称">
-        <el-input v-model="form.name" placeholder="请输入网站名称" />
+      <el-form-item :label="t('site.name')">
+        <el-input v-model="form.name" :placeholder="t('site.placeholderName')" />
       </el-form-item>
 
-      <el-form-item label="网站地址">
-        <el-input v-model="form.url" placeholder="请输入网站地址" />
+      <el-form-item :label="t('site.url')">
+        <el-input v-model="form.url" :placeholder="t('site.placeholderUrl')" />
       </el-form-item>
 
-      <el-form-item label="网站描述">
+      <el-form-item :label="t('site.description')">
         <el-input 
           v-model="form.description" 
           type="textarea" 
           :rows="3"
-          placeholder="请输入网站描述" 
+          :placeholder="t('site.placeholderDesc')" 
         />
       </el-form-item>
 
-      <el-form-item label="所属分类">
-        <el-select v-model="form.categoryId" placeholder="请选择分类">
+      <el-form-item :label="t('site.category')">
+        <el-select v-model="form.categoryId" :placeholder="t('site.placeholderCategory')">
           <el-option 
             v-for="cat in categories" 
             :key="cat.id" 
@@ -43,31 +43,31 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="私有书签">
+      <el-form-item :label="t('site.private')">
         <el-switch 
           v-model="form.private" 
-          active-text="仅登录可见" 
-          inactive-text="公开" 
+          :active-text="t('category.private')" 
+          :inactive-text="t('category.public')" 
         />
       </el-form-item>
 
-      <el-form-item label="访问权限">
-        <el-select v-model="form.level" placeholder="请选择最小可见等级">
-          <el-option label="游客 (公开)" :value="0" />
-          <el-option label="注册用户" :value="1" />
-          <el-option label="VIP用户" :value="2" />
-          <el-option label="管理员" :value="3" />
-        </el-select>
+      <el-form-item :label="t('site.permission')">
+         <el-select v-model="form.level" :placeholder="t('category.permissionPlaceholder')">
+           <el-option :label="t('userLevel.guest') + ' (' + t('category.public') + ')'" :value="0" />
+           <el-option :label="t('userLevel.user')" :value="1" />
+           <el-option :label="t('userLevel.vip')" :value="2" />
+           <el-option :label="t('userLevel.admin')" :value="3" />
+         </el-select>
       </el-form-item>
 
-      <el-form-item label="标签">
+      <el-form-item :label="t('site.tags')">
         <el-select
           v-model="form.tags"
           multiple
           filterable
           allow-create
           default-first-option
-          placeholder="选择或输入标签，按回车添加"
+          :placeholder="t('site.placeholderTags')"
           style="width: 100%"
         >
           <el-option
@@ -78,22 +78,22 @@
           />
         </el-select>
         <div style="margin-top: 5px; font-size: 12px; color: #909399;">
-          提示：输入后按回车添加新标签
+          {{ t('site.tagsTip') }}
         </div>
       </el-form-item>
 
-      <el-form-item label="置顶显示">
+      <el-form-item :label="t('site.pinned')">
         <el-switch 
           v-model="form.pinned" 
-          active-text="置顶" 
-          inactive-text="默认" 
+          :active-text="t('site.pinnedText')" 
+          :inactive-text="t('site.defaultText')" 
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" @click="$emit('save')">确定</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="$emit('save')">{{ t('common.confirm') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -101,6 +101,9 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import { Item, Category } from '@/types';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: boolean;

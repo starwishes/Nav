@@ -13,6 +13,28 @@ export const sessionService = {
      */
     create(username, ip, userAgent) {
         const sessions = db.read(SESSIONS_PATH, []);
+
+        // 查找是否存在相同用户、IP 和设备且未过期的会话
+        const existingSession = sessions.find(s =>
+            s.username === username &&
+            s.ip === ip &&
+            s.userAgent === userAgent
+        );
+
+        if (existingSession) {
+            // 检查是否过期
+            const expireTime = new Date(existingSession.createdAt);
+            expireTime.setDate(expireTime.getDate() + SESSION_EXPIRE_DAYS);
+
+            if (new Date() < expireTime) {
+                // 会话仍然有效，更新活跃时间并返回
+                existingSession.lastActiveAt = new Date().toISOString();
+                db.write(SESSIONS_PATH, sessions);
+                logger.info(`复用现有会话: ${username} (${existingSession.sessionId.substring(0, 8)}...)`);
+                return existingSession.sessionId;
+            }
+        }
+
         const sessionId = crypto.randomBytes(16).toString('hex');
 
         const session = {
@@ -26,7 +48,7 @@ export const sessionService = {
 
         sessions.push(session);
         db.write(SESSIONS_PATH, sessions);
-        logger.info(`会话创建: ${username} (${sessionId.substring(0, 8)}...)`);
+        logger.info(`创建新会话: ${username} (${sessionId.substring(0, 8)}...)`);
 
         return sessionId;
     },

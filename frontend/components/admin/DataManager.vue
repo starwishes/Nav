@@ -2,16 +2,16 @@
   <div class="data-manager fade-in">
     <div class="toolbar-card glass-card">
       <el-tabs v-model="internalActiveTab" class="content-tabs">
-        <el-tab-pane label="分类管理" name="categories" />
-        <el-tab-pane label="网站管理" name="items" />
+        <el-tab-pane :label="t('data.categories')" name="categories" />
+        <el-tab-pane :label="t('data.sites')" name="items" />
       </el-tabs>
       <div class="global-actions">
         <el-button type="success" :loading="saving" @click="$emit('save')" class="hover-scale">
-          <el-icon><Upload /></el-icon> 保存并同步
+          <el-icon><Upload /></el-icon> {{ t('manage.saveSync') }}
         </el-button>
-        <el-button type="info" @click="handleExport" class="hover-scale">导出 JSON</el-button>
-        <el-button type="warning" @click="triggerImport" class="hover-scale">导入 JSON</el-button>
-        <el-button type="success" @click="$emit('show-bookmark-import')" class="hover-scale">导入浏览器书签</el-button>
+        <el-button type="info" @click="handleExport" class="hover-scale">{{ t('manage.exportJson') }}</el-button>
+        <el-button type="warning" @click="triggerImport" class="hover-scale">{{ t('manage.importJson') }}</el-button>
+        <el-button type="success" @click="$emit('show-bookmark-import')" class="hover-scale">{{ t('manage.importBookmark') }}</el-button>
         <input type="file" ref="fileInput" style="display: none" accept=".json" @change="handleImport" />
       </div>
     </div>
@@ -20,8 +20,8 @@
       <el-card shadow="never" class="glass-card table-wrapper">
         <template #header>
           <div class="card-header">
-            <span>分类列表</span>
-            <el-button type="primary" :icon="Plus" @click="$emit('add-category')">添加分类</el-button>
+            <span>{{ t('manage.categoryList') }}</span>
+            <el-button type="primary" :icon="Plus" @click="$emit('add-category')">{{ t('manage.addCategory') }}</el-button>
           </div>
         </template>
         <CategoryTable 
@@ -37,26 +37,26 @@
       <el-card shadow="never" class="glass-card table-wrapper">
         <template #header>
           <div class="card-header">
-            <span>网站列表（{{ filteredItems.length }})</span>
+            <span>{{ t('manage.siteList') }}（{{ filteredItems.length }})</span>
             <div class="header-filters">
               <el-input 
                 v-model="searchKeyword" 
-                placeholder="搜索..." 
+                :placeholder="t('manage.searchPlaceholder')" 
                 clearable 
                 style="width: 200px;" 
                 @input="updateSearch"
               />
               <el-select 
                 v-model="filterCategory" 
-                placeholder="全部分类" 
+                :placeholder="t('manage.allCategories')" 
                 clearable 
                 style="width: 150px;"
                 @change="updateFilter"
               >
-                <el-option label="全部分类" :value="0" />
+                <el-option :label="t('manage.allCategories')" :value="0" />
                 <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
               </el-select>
-              <el-button type="primary" :icon="Plus" @click="$emit('add-item')">添加网站</el-button>
+              <el-button type="primary" :icon="Plus" @click="$emit('add-item')">{{ t('manage.addSite') }}</el-button>
             </div>
           </div>
         </template>
@@ -79,6 +79,9 @@ import { Upload, Plus } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import CategoryTable from '@/components/CategoryTable.vue';
 import SiteTable from '@/components/SiteTable.vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   activeTab: string;
@@ -117,7 +120,7 @@ const handleExport = () => {
   a.download = `starnav-backup-${new Date().toISOString().split('T')[0]}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  ElMessage.success('导出成功');
+  ElMessage.success(t('manage.exportSuccess'));
 };
 
 const triggerImport = () => fileInput.value?.click();
@@ -132,9 +135,9 @@ const handleImport = (e: Event) => {
       const json = JSON.parse(event.target?.result as string);
       if (json.content?.categories && json.content?.items) {
         emit('json-import', json.content);
-        ElMessage.success('导入成功，请点击“保存并同步”');
+        ElMessage.success(t('manage.importSuccess'));
       }
-    } catch (err) { ElMessage.error('导入失败'); }
+    } catch (err) { ElMessage.error(t('manage.importFail')); }
     finally { target.value = ''; }
   };
   reader.readAsText(file);

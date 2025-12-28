@@ -5,17 +5,37 @@ export const useMainStore = defineStore('mainStore', {
     return {
       isShowDrawer: false,
       site: [],
+      settings: {
+        homeUrl: '',
+        timezone: '',
+        registrationEnabled: true,
+        backgroundUrl: '',
+        footerHtml: '',
+        siteName: ''
+      },
       menu: [
         {
           index: 1,
-          name: '首页',
+          name: 'home',
           iconClass: 'iconfont icon-md-home'
         }
       ]
     }
   },
   getters: {},
-  actions: {},
+  actions: {
+    async fetchSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const data = await res.json();
+          this.settings = { ...this.settings, ...data };
+        }
+      } catch (e) {
+        console.error('Failed to fetch settings', e);
+      }
+    }
+  },
 
   persist: false
 })

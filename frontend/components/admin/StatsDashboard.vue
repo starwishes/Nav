@@ -5,7 +5,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="never" class="stat-card">
           <div class="stat-value">{{ totalClicks }}</div>
-          <div class="stat-label">总点击量</div>
+          <div class="stat-label">{{ t('stats.totalClicks') }}</div>
         </el-card>
       </el-col>
       
@@ -13,7 +13,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="never" class="stat-card">
           <div class="stat-value">{{ totalBookmarks }}</div>
-          <div class="stat-label">书签总数</div>
+          <div class="stat-label">{{ t('stats.totalBookmarks') }}</div>
         </el-card>
       </el-col>
       
@@ -21,7 +21,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="never" class="stat-card">
           <div class="stat-value">{{ totalCategories }}</div>
-          <div class="stat-label">分类数量</div>
+          <div class="stat-label">{{ t('stats.totalCategories') }}</div>
         </el-card>
       </el-col>
       
@@ -29,7 +29,7 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card shadow="never" class="stat-card">
           <div class="stat-value">{{ totalUsers }}</div>
-          <div class="stat-label">用户数量</div>
+          <div class="stat-label">{{ t('stats.totalUsers') }}</div>
         </el-card>
       </el-col>
     </el-row>
@@ -37,19 +37,19 @@
     <!-- 热门书签排行 -->
     <el-card shadow="never" class="glass-card" style="margin-top: 16px;">
       <template #header>
-        <span>🔥 热门书签 Top 10</span>
+        <span>🔥 {{ t('stats.topBookmarks') }}</span>
       </template>
       
       <el-table :data="topBookmarks" stripe>
         <el-table-column type="index" label="#" width="50" />
-        <el-table-column prop="name" label="名称" />
-        <el-table-column prop="clickCount" label="点击量" width="100" sortable>
+        <el-table-column prop="name" :label="t('stats.name')" />
+        <el-table-column prop="clickCount" :label="t('stats.clickCount')" width="100" sortable>
           <template #default="{ row }">
             <el-tag type="primary">{{ row.clickCount || 0 }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="categoryName" label="分类" width="120" />
-        <el-table-column prop="lastVisited" label="最后访问" width="180">
+        <el-table-column prop="categoryName" :label="t('stats.category')" width="120" />
+        <el-table-column prop="lastVisited" :label="t('stats.lastVisited')" width="180">
           <template #default="{ row }">
             {{ row.lastVisited ? formatTime(row.lastVisited) : '-' }}
           </template>
@@ -60,14 +60,14 @@
     <!-- 分类统计 -->
     <el-card shadow="never" class="glass-card" style="margin-top: 16px;">
       <template #header>
-        <span>📊 分类统计</span>
+        <span>📊 {{ t('stats.catStats') }}</span>
       </template>
       
       <el-table :data="categoryStats" stripe>
-        <el-table-column prop="name" label="分类名称" />
-        <el-table-column prop="itemCount" label="书签数量" width="100" />
-        <el-table-column prop="totalClicks" label="总点击量" width="100" />
-        <el-table-column label="占比" width="200">
+        <el-table-column prop="name" :label="t('stats.name')" />
+        <el-table-column prop="itemCount" :label="t('stats.bookmarkCount')" width="100" />
+        <el-table-column prop="totalClicks" :label="t('stats.totalClicks')" width="100" />
+        <el-table-column :label="t('stats.percentage')" width="200">
           <template #default="{ row }">
             <el-progress 
               :percentage="totalClicks ? Math.round(row.totalClicks / totalClicks * 100) : 0" 
@@ -83,6 +83,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAdminStore } from '@/store/admin';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface Bookmark {
   id: number;

@@ -4,8 +4,11 @@
       <i class="iconfont icon-md-menu"></i>
     </div>
     <ul class="menu">
-      <li @click="router.push('/')">
-        <div class="menu-item"><i class="iconfont icon-md-home"></i>首页</div>
+      <li @click="handleHomeClick">
+        <div class="menu-item">
+          <i class="iconfont icon-md-home"></i>
+          {{ t('nav.home') }}
+        </div>
       </li>
     </ul>
     <Clock class="clock-component"></Clock>
@@ -14,17 +17,17 @@
     <template v-if="adminStore.isAuthenticated">
       <div class="admin-menu-item" @click="goToAdmin">
         <i class="iconfont icon-md-lock"></i>
-        <span class="admin-text">后台管理</span>
+        <span class="admin-text">{{ t('nav.admin') }}</span>
       </div>
       <div class="admin-menu-item logout-btn" @click="handleLogout">
         <i class="iconfont icon-md-log-out"></i>
-        <span class="admin-text">退出登录</span>
+        <span class="admin-text">{{ t('nav.logout') }}</span>
       </div>
     </template>
     <template v-else>
       <div class="admin-menu-item" @click="showLoginDialog = true">
         <i class="iconfont icon-md-contact"></i>
-        <span class="admin-text">登录</span>
+        <span class="admin-text">{{ t('nav.login') }}</span>
       </div>
     </template>
 
@@ -32,13 +35,28 @@
       <el-icon v-if="themeMode === 'light'"><Moon /></el-icon>
       <el-icon v-else><Sunny /></el-icon>
     </div>
+
+    <el-dropdown trigger="click" @command="handleLangCommand">
+      <div class="lang-toggle admin-menu-item">
+        <el-icon><i class="iconfont icon-md-globe" style="font-size: 18px;"></i></el-icon>
+        <span class="admin-text" style="margin-left: 4px;">{{ currentLang }}</span>
+      </div>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="zh-CN">简体中文</el-dropdown-item>
+          <el-dropdown-item command="en-US">English</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
   </div>
   <LeftDrawer></LeftDrawer>
   <LoginDialog v-model="showLoginDialog" />
 </template>
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { getLocale, setLocale } from '@/plugins/i18n';
 import Clock from './Clock.vue';
 import LeftDrawer from './LeftDrawer.vue';
 import LoginDialog from '@/components/admin/LoginDialog.vue';
@@ -47,6 +65,8 @@ import { useAdminStore } from '@/store/admin';
 import { ElMessage } from 'element-plus';
 import { Moon, Sunny } from '@element-plus/icons-vue';
 
+const { t } = useI18n();
+
 const change = ref(false)
 const store = useMainStore()
 const router = useRouter()
@@ -54,6 +74,16 @@ const adminStore = useAdminStore()
 const scrollHeight = ref(0);
 const showLoginDialog = ref(false);
 const themeMode = ref('light');
+
+const currentLang = computed(() => {
+  return getLocale() === 'zh-CN' ? '简体中文' : 'English';
+});
+
+const handleLangCommand = (command) => {
+  if (command === getLocale()) return;
+  setLocale(command);
+  ElMessage.success(command === 'zh-CN' ? '已切换至中文' : 'Switched to English');
+};
 
 const toggleTheme = () => {
   themeMode.value = themeMode.value === 'light' ? 'dark' : 'light';
@@ -79,9 +109,25 @@ const goToAdmin = () => {
   router.push('/admin/dashboard')
 }
 
+const handleHomeClick = () => {
+  const homeUrl = store.settings?.homeUrl;
+  if (homeUrl && (homeUrl.startsWith('http') || homeUrl.startsWith('//'))) {
+    window.location.href = homeUrl;
+  } else if (homeUrl) {
+    router.push(homeUrl);
+  } else {
+    // 默认行为：如果是首页则刷新，否则跳到首页
+    if (router.currentRoute.value.path === '/') {
+      window.location.reload();
+    } else {
+      router.push('/');
+    }
+  }
+};
+
 const handleLogout = () => {
   adminStore.clearAuth()
-  ElMessage.success('已退出登录')
+  ElMessage.success(t('auth.logoutSuccess'))
 }
 const handleScroll = () => {
   scrollHeight.value = window.scrollY;
@@ -93,7 +139,18 @@ const handleScroll = () => {
   }
 };
 
+const fetchSettings = async () => {
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    store.settings = data;
+  } catch (err) {
+    console.error('获取系统设置失败', err);
+  }
+};
+
 onMounted(() => {
+  fetchSettings();
   window.addEventListener('scroll', handleScroll);
   const savedTheme = localStorage.getItem('theme-mode') || 'light';
   themeMode.value = savedTheme;
@@ -115,7 +172,7 @@ onUnmounted(() => {
   display: flex;
   height: 75px;
   line-height: 75px;
-  padding: 0 40px;
+  padding: 0 24px;
   background-color: transparent;
   z-index: 999;
   color: #fff;
@@ -125,7 +182,7 @@ onUnmounted(() => {
 
   .drawer-trigger {
     cursor: pointer;
-    margin-right: 30px;
+    margin-right: 20px;
     display: flex;
     align-items: center;
     .iconfont {
@@ -136,7 +193,7 @@ onUnmounted(() => {
   .menu {
     display: flex;
     .menu-item {
-      margin-right: 30px;
+      margin-right: 20px;
       display: flex;
       align-items: center;
       .iconfont {
@@ -149,8 +206,8 @@ onUnmounted(() => {
     cursor: pointer;
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    border-radius: 12px;
+    padding: 0 8px;
+    border-radius: 8px;
     transition: all 0.3s ease;
     white-space: nowrap;
     
@@ -165,7 +222,7 @@ onUnmounted(() => {
     }
     
     &.logout-btn {
-      margin-left: 10px;
+      margin-left: 8px;
       &:hover {
         background-color: rgba(239, 68, 68, 0.2);
         color: #fca5a5;
@@ -196,7 +253,7 @@ onUnmounted(() => {
     padding: 0 15px;
     
     .admin-menu-item {
-      padding: 0 10px;
+      // padding: 0 10px;
       .admin-text {
         display: none;
       }

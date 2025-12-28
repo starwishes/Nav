@@ -1,35 +1,35 @@
 <template>
   <div class="session-manager">
     <div class="header">
-      <h3>会话管理</h3>
+      <h3>{{ t('sessions.title') }}</h3>
       <el-button type="danger" size="small" @click="revokeOthers" :loading="revoking">
-        踢出其他设备
+        {{ t('sessions.revokeOthers') }}
       </el-button>
     </div>
     
     <el-table :data="sessions" v-loading="loading" stripe>
-      <el-table-column prop="isCurrent" label="" width="60">
+      <el-table-column label="" width="80">
         <template #default="{ row }">
-          <el-tag v-if="row.isCurrent" type="success" size="small">当前</el-tag>
+          <el-tag v-if="row.isCurrent" type="success" size="small">{{ t('sessions.current') }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="ip" label="IP 地址" width="140" />
-      <el-table-column prop="userAgent" label="设备" show-overflow-tooltip>
+      <el-table-column prop="ip" :label="t('common.ip')" width="140" />
+      <el-table-column prop="userAgent" :label="t('common.device')" show-overflow-tooltip>
         <template #default="{ row }">
           {{ parseDevice(row.userAgent) }}
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="登录时间" width="180">
+      <el-table-column prop="createdAt" :label="t('sessions.loginTime')" width="180">
         <template #default="{ row }">
           {{ formatTime(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column prop="lastActiveAt" label="最后活跃" width="180">
+      <el-table-column prop="lastActiveAt" :label="t('sessions.lastActive')" width="180">
         <template #default="{ row }">
           {{ formatTime(row.lastActiveAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="100">
+      <el-table-column :label="t('common.action')" width="100">
         <template #default="{ row }">
           <el-button
             v-if="!row.isCurrent"
@@ -38,7 +38,7 @@
             link
             @click="revokeSession(row.sessionId)"
           >
-            踢出
+            {{ t('sessions.revokeCurrent') }}
           </el-button>
         </template>
       </el-table-column>
@@ -50,6 +50,9 @@
 import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAdminStore } from '@/store/admin';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface Session {
   sessionId: string;
@@ -82,13 +85,13 @@ const fetchSessions = async () => {
 
 const revokeSession = async (sessionId: string) => {
   try {
-    await ElMessageBox.confirm('确定要踢出此设备吗？', '确认', { type: 'warning' });
+    await ElMessageBox.confirm(t('sessions.revokeConfirm'), t('common.confirm'), { type: 'warning' });
     const res = await fetch(`/api/sessions/${sessionId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${adminStore.token}` }
     });
     if (res.ok) {
-      ElMessage.success('已踢出');
+      ElMessage.success(t('common.success'));
       fetchSessions();
     }
   } catch (err) {
@@ -98,7 +101,7 @@ const revokeSession = async (sessionId: string) => {
 
 const revokeOthers = async () => {
   try {
-    await ElMessageBox.confirm('确定要踢出所有其他设备吗？', '确认', { type: 'warning' });
+    await ElMessageBox.confirm(t('sessions.revokeAllConfirm'), t('common.confirm'), { type: 'warning' });
     revoking.value = true;
     const res = await fetch('/api/sessions/revoke-others', {
       method: 'POST',
@@ -106,7 +109,7 @@ const revokeOthers = async () => {
     });
     const data = await res.json();
     if (data.success) {
-      ElMessage.success(`已踢出 ${data.revokedCount} 个设备`);
+      ElMessage.success(t('common.success') + ` ${data.revokedCount}`);
       fetchSessions();
     }
   } catch (err) {
@@ -121,7 +124,7 @@ const formatTime = (timestamp: string) => {
 };
 
 const parseDevice = (ua: string) => {
-  if (!ua || ua === 'unknown') return '未知设备';
+  if (!ua || ua === 'unknown') return t('common.unknown');
   if (ua.includes('Windows')) {
     if (ua.includes('Edge')) return 'Windows Edge';
     if (ua.includes('Chrome')) return 'Windows Chrome';

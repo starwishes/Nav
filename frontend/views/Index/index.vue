@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import Head from '@/components/index/Head.vue'
+import { onMounted } from 'vue'
+import { useMainStore } from '@/store'
+import PageHeader from '@/components/index/PageHeader.vue'
 import Background from '@/components/index/Background.vue'
 import Search from '@/components/index/Search.vue'
 import Anchor from '@/components/index/Anchor.vue'
 import Site from '@/components/index/Site.vue'
 import Sidebar from '@/components/index/Sidebar.vue'
 import Footer from '@/components/index/Footer.vue'
+
+const store = useMainStore()
+
+onMounted(() => {
+  store.fetchSettings()
+})
 
 </script>
 
@@ -15,7 +23,7 @@ import Footer from '@/components/index/Footer.vue'
     <Background></Background>
     <!-- 主要内容 -->
     <section class="content">
-      <Head></Head>
+      <PageHeader></PageHeader>
       <main ref="homeContent" class="home-content">
         <Search></Search>
         <Anchor></Anchor>

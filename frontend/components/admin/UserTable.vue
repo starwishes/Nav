@@ -1,33 +1,33 @@
 <template>
   <div class="user-table">
     <div class="table-toolbar">
-      <el-button type="primary" :icon="Plus" @click="showAddDialog = true">添加新用户</el-button>
+      <el-button type="primary" :icon="Plus" @click="showAddDialog = true">{{ t('users.addUser') }}</el-button>
     </div>
 
     <el-table :data="users" style="width: 100%" class="glass-table">
-      <el-table-column prop="username" label="用户名" />
-      <el-table-column prop="level" label="等级">
+      <el-table-column prop="username" :label="t('common.username')" />
+      <el-table-column prop="level" :label="t('users.level')">
         <template #default="{ row }">
           <el-tag :type="getLevelTag(row.level)">{{ getLevelName(row.level) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="注册时间">
+      <el-table-column prop="createdAt" :label="t('users.regTime')">
         <template #default="{ row }">
           {{ new Date(row.createdAt).toLocaleString() }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="280">
+      <el-table-column :label="t('common.action')" width="280">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-dropdown trigger="click" @command="(val: number) => $emit('update-level', row.username, val)">
               <el-button type="primary" size="small" link :disabled="row.username === 'admin'">
-                等级 <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                {{ t('users.level') }} <el-icon class="el-icon--right"><arrow-down /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item :command="1">注册用户 (1)</el-dropdown-item>
-                  <el-dropdown-item :command="2">VIP用户 (2)</el-dropdown-item>
-                  <el-dropdown-item :command="3">管理员 (3)</el-dropdown-item>
+                  <el-dropdown-item :command="1">{{ t('userLevel.user') }} (1)</el-dropdown-item>
+                  <el-dropdown-item :command="2">{{ t('userLevel.vip') }} (2)</el-dropdown-item>
+                  <el-dropdown-item :command="3">{{ t('userLevel.admin') }} (3)</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -39,11 +39,11 @@
               @click="handleEdit(row)"
               :disabled="row.username === 'admin' && adminStore.user?.login !== 'admin'"
             >
-              编辑
+              {{ t('common.edit') }}
             </el-button>
 
             <el-popconfirm
-              title="确定要删除该用户吗？此操作不可逆，将同步删除其所有数据。"
+              :title="t('users.deleteConfirm')"
               @confirm="$emit('delete-user', row.username)"
             >
               <template #reference>
@@ -53,7 +53,7 @@
                   link 
                   :disabled="row.username === 'admin' || row.username === adminStore.user?.login"
                 >
-                  删除
+                  {{ t('common.delete') }}
                 </el-button>
               </template>
             </el-popconfirm>
@@ -63,44 +63,44 @@
     </el-table>
 
     <!-- 添加用户对话框 -->
-    <el-dialog v-model="showAddDialog" title="添加新用户" width="400px" append-to-body>
+    <el-dialog v-model="showAddDialog" :title="t('users.addUser')" width="400px" append-to-body>
       <el-form :model="addForm" label-width="80px">
-        <el-form-item label="用户名">
-          <el-input v-model="addForm.username" placeholder="请输入用户名" />
+        <el-form-item :label="t('common.username')">
+          <el-input v-model="addForm.username" :placeholder="t('users.inputUsername')" />
         </el-form-item>
-        <el-form-item label="密码">
-          <el-input v-model="addForm.password" type="password" placeholder="请输入密码" show-password />
+        <el-form-item :label="t('users.password')">
+          <el-input v-model="addForm.password" type="password" :placeholder="t('users.inputPassword')" show-password />
         </el-form-item>
-        <el-form-item label="初始等级">
+        <el-form-item :label="t('users.level')">
           <el-select v-model="addForm.level" style="width: 100%">
-            <el-option label="注册用户 (1)" :value="1" />
-            <el-option label="VIP用户 (2)" :value="2" />
-            <el-option label="管理员 (3)" :value="3" />
+            <el-option :label="t('userLevel.user') + ' (1)'" :value="1" />
+            <el-option :label="t('userLevel.vip') + ' (2)'" :value="2" />
+            <el-option :label="t('userLevel.admin') + ' (3)'" :value="3" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmAdd">确定添加</el-button>
+        <el-button @click="showAddDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="confirmAdd">{{ t('users.confirmAdd') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 编辑用户对话框 -->
-    <el-dialog v-model="showEditDialog" title="修改用户信息" width="400px" append-to-body>
+    <el-dialog v-model="showEditDialog" :title="t('users.editUser')" width="400px" append-to-body>
       <el-form :model="editForm" label-width="80px">
-        <el-form-item label="用户名">
-          <el-input v-model="editForm.newUsername" placeholder="新的用户名" />
+        <el-form-item :label="t('common.username')">
+          <el-input v-model="editForm.newUsername" :placeholder="t('users.inputUsername')" />
         </el-form-item>
-        <el-form-item label="重置密码">
-          <el-input v-model="editForm.password" type="password" placeholder="留空则不修改密码" show-password />
+        <el-form-item :label="t('users.resetPassword')">
+          <el-input v-model="editForm.password" type="password" :placeholder="t('users.resetPasswordPlaceholder')" show-password />
         </el-form-item>
       </el-form>
       <div class="form-tip" style="margin-left: 80px; font-size: 12px; color: var(--gray-500);">
-        注意：修改用户名后，用户在下次登录前可能需要使用新名称。
+        {{ t('users.usernameParams') }}
       </div>
       <template #footer>
-        <el-button @click="showEditDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmEdit">保存修改</el-button>
+        <el-button @click="showEditDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="confirmEdit">{{ t('users.saveEdit') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -111,6 +111,9 @@ import { ref, reactive } from 'vue';
 import { ArrowDown, Plus } from '@element-plus/icons-vue';
 import { useAdminStore } from '@/store/admin';
 import { ElMessage } from 'element-plus';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{ users: any[] }>();
 const emit = defineEmits(['update-level', 'delete-user', 'add-user', 'update-user']);
@@ -159,8 +162,8 @@ const confirmEdit = () => {
 };
 
 const getLevelName = (level: number) => {
-  const names = ['游客', '注册用户', 'VIP用户', '管理员'];
-  return names[level] || '未知';
+  const keys = ['guest', 'user', 'vip', 'admin'];
+  return t(`userLevel.${keys[level] || 'unknown'}`);
 };
 
 const getLevelTag = (level: number) => {

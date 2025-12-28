@@ -12,23 +12,23 @@
       <el-divider />
 
       <el-form :model="form" label-position="top" class="glass-form">
-        <el-form-item label="用户名">
-          <el-input v-model="form.newUsername" placeholder="修改用户名">
+        <el-form-item :label="t('profile.username')">
+          <el-input v-model="form.newUsername" :placeholder="t('profile.changeUsername')">
             <template #prefix><el-icon><User /></el-icon></template>
           </el-input>
-          <div class="form-tip">修改用户名后，所有关联的数据将自动同步。</div>
+          <div class="form-tip">{{ t('profile.changeUsernameTip') }}</div>
         </el-form-item>
         
-        <el-form-item label="修改密码">
-          <el-input v-model="form.newPassword" type="password" placeholder="请输入新密码，不修改请留空" show-password>
+        <el-form-item :label="t('profile.changePassword')">
+          <el-input v-model="form.newPassword" type="password" :placeholder="t('profile.passwordPlaceholder')" show-password>
             <template #prefix><el-icon><Lock /></el-icon></template>
           </el-input>
-          <div class="form-tip">建议使用 8 位以上包含字母与数字的密码。</div>
+          <div class="form-tip">{{ t('profile.passwordTip') }}</div>
         </el-form-item>
 
         <el-form-item class="form-actions">
           <el-button type="primary" :loading="loading" @click="handleUpdate" class="hover-scale submit-btn">
-            保存修改
+            {{ t('profile.saveChanges') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -40,6 +40,9 @@
 import { reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { User, Lock } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{ username: string, level: number }>();
 const emit = defineEmits(['update']);
@@ -56,12 +59,12 @@ watch(() => props.username, (newVal) => {
 });
 
 const getLevelName = (level: number) => {
-  const names = ['游客', '注册用户', 'VIP用户', '管理员'];
-  return names[level] || '未知';
+  const keys = ['guest', 'user', 'vip', 'admin'];
+  return t(`userLevel.${keys[level] || 'unknown'}`);
 };
 
 const getLevelTag = (level: number) => {
-  const tags = ['info', '', 'warning', 'danger'];
+  const tags: any = ['info', '', 'warning', 'danger'];
   return tags[level] || 'info';
 };
 
@@ -70,7 +73,7 @@ const handleUpdate = async () => {
   const isPasswordChanged = !!form.newPassword;
 
   if (!isUsernameChanged && !isPasswordChanged) {
-    ElMessage.info('未做任何修改');
+    ElMessage.info(t('profile.noChanges'));
     return;
   }
 

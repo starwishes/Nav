@@ -1,37 +1,37 @@
 <template>
   <el-dialog 
     v-model="visible" 
-    :title="form.id && isEdit ? '编辑分类' : '添加分类'"
+    :title="form.id && isEdit ? t('category.editCategory') : t('category.addCategory')"
     width="500px"
     class="mobile-dialog"
     @close="$emit('update:modelValue', false)"
   >
     <el-form :model="form" label-width="80px">
-      <el-form-item label="分类 ID">
+      <el-form-item :label="t('category.id')">
         <el-input-number 
           v-model="form.id" 
           :min="1" 
           :disabled="isEdit"
         />
       </el-form-item>
-      <el-form-item label="分类名称">
-        <el-input v-model="form.name" placeholder="请输入分类名称" />
+      <el-form-item :label="t('category.name')">
+        <el-input v-model="form.name" :placeholder="t('category.placeholderName')" />
       </el-form-item>
-      <el-form-item label="隐藏分类">
-        <el-switch v-model="form.private" active-text="仅登录可见" inactive-text="公开" />
+      <el-form-item :label="t('category.hide')">
+        <el-switch v-model="form.private" :active-text="t('category.private')" :inactive-text="t('category.public')" />
       </el-form-item>
-      <el-form-item label="通过权限">
-        <el-select v-model="form.level" placeholder="请选择最小可见等级">
-          <el-option label="游客 (公开)" :value="0" />
-          <el-option label="注册用户" :value="1" />
-          <el-option label="VIP用户" :value="2" />
-          <el-option label="管理员" :value="3" />
+      <el-form-item :label="t('category.permission')">
+        <el-select v-model="form.level" :placeholder="t('category.permissionPlaceholder')">
+           <el-option :label="t('userLevel.guest') + ' (' + t('category.public') + ')'" :value="0" />
+           <el-option :label="t('userLevel.user')" :value="1" />
+           <el-option :label="t('userLevel.vip')" :value="2" />
+           <el-option :label="t('userLevel.admin')" :value="3" />
         </el-select>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" @click="$emit('save')">确定</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="$emit('save')">{{ t('common.confirm') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -39,6 +39,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Category } from '@/types';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: boolean;

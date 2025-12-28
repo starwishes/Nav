@@ -1,45 +1,78 @@
 <template>
   <div class="system-settings">
     <el-form :model="settings" label-width="140px" class="glass-form">
-      <el-form-item label="开放用户注册">
+      <el-form-item :label="t('settings.registration')">
         <el-switch v-model="settings.registrationEnabled" />
-        <div class="form-tip">关闭后，新用户将无法通过注册页面创建账户。</div>
+        <div class="form-tip">{{ t('settings.registrationTip') }}</div>
       </el-form-item>
-      <el-form-item label="新用户初始等级">
+      <el-form-item :label="t('settings.defaultLevel')">
         <el-select v-model="settings.defaultUserLevel">
-          <el-option label="注册用户 (1)" :value="1" />
-          <el-option label="VIP用户 (2)" :value="2" />
+          <el-option :label="t('userLevel.user') + ' (1)'" :value="1" />
+          <el-option :label="t('userLevel.vip') + ' (2)'" :value="2" />
         </el-select>
-        <div class="form-tip">新注册账户默认获得的等级。</div>
+        <div class="form-tip">{{ t('settings.defaultLevelTip') }}</div>
       </el-form-item>
 
-      <el-form-item label="显示时区">
-        <el-select v-model="settings.timezone" filterable placeholder="选择时区">
-          <el-option label="本地时间 (跟随浏览器)" value="" />
-          <el-option label="北京时间 (UTC+8)" value="Asia/Shanghai" />
-          <el-option label="东京时间 (UTC+9)" value="Asia/Tokyo" />
-          <el-option label="伦敦时间 (UTC+0)" value="Europe/London" />
-          <el-option label="纽约时间 (UTC-5)" value="America/New_York" />
-          <el-option label="洛杉矶时间 (UTC-8)" value="America/Los_Angeles" />
-          <el-option label="莫斯科时间 (UTC+3)" value="Europe/Moscow" />
-          <el-option label="巴黎时间 (UTC+1)" value="Europe/Paris" />
-          <el-option label="悉尼时间 (UTC+11)" value="Australia/Sydney" />
-        </el-select>
-        <div class="form-tip">首页时钟将根据此处设置的时区显示。</div>
+      <el-form-item :label="t('settings.homeUrl')">
+        <el-input v-model="settings.homeUrl" :placeholder="t('settings.homeUrlPlaceholder')" clearable />
+        <div class="form-tip">{{ t('settings.homeUrlTip') }}</div>
       </el-form-item>
 
-      <el-divider>背景图设置</el-divider>
+      <el-divider />
 
-      <el-form-item label="背景图 URL">
+      <h3 class="section-title">{{ t('settings.siteNameSettings') }}</h3>
+      <el-form-item :label="t('settings.siteNameSettings')">
+        <el-input v-model="settings.siteName" :placeholder="t('notification.siteName')" />
+        <div class="form-tip">{{ t('settings.siteNameTip') }}</div>
+      </el-form-item>
+
+      <el-divider />
+
+      <h3 class="section-title">{{ t('settings.footerSettings') }}</h3>
+      <el-form-item :label="t('settings.footerHtml')">
+        <el-input
+          v-model="settings.footerHtml"
+          type="textarea"
+          :rows="3"
+          :placeholder="t('settings.footerPlaceholder')"
+        />
+        <div class="form-tip">
+          {{ t('settings.footerHtmlTip') }}
+           <el-button link type="primary" size="small" @click="fillDefaultFooter" style="margin-left: 8px;">
+            {{ t('settings.useDefaultTemplate') }}
+          </el-button>
+        </div>
+      </el-form-item>
+
+      <el-divider />
+
+      <el-form-item :label="t('settings.timezone')">
+        <el-select v-model="settings.timezone" filterable :placeholder="t('common.tips')">
+          <el-option :label="t('timezone.local')" value="" />
+          <el-option :label="t('timezone.shanghai')" value="Asia/Shanghai" />
+          <el-option :label="t('timezone.tokyo')" value="Asia/Tokyo" />
+          <el-option :label="t('timezone.london')" value="Europe/London" />
+          <el-option :label="t('timezone.newYork')" value="America/New_York" />
+          <el-option :label="t('timezone.losAngeles')" value="America/Los_Angeles" />
+          <el-option :label="t('timezone.moscow')" value="Europe/Moscow" />
+          <el-option :label="t('timezone.paris')" value="Europe/Paris" />
+          <el-option :label="t('timezone.sydney')" value="Australia/Sydney" />
+        </el-select>
+        <div class="form-tip">{{ t('settings.timezoneTip') }}</div>
+      </el-form-item>
+
+      <el-divider>{{ t('settings.bgSettings') }}</el-divider>
+
+      <el-form-item :label="t('settings.bgUrl')">
         <el-input 
           v-model="backgroundUrl" 
-          placeholder="输入图片 URL，留空使用默认背景"
+          :placeholder="t('settings.bgPlaceholder')"
           clearable
         />
-        <div class="form-tip">支持 https:// 开头的图片链接</div>
+        <div class="form-tip">{{ t('settings.bgUrlTip') }}</div>
       </el-form-item>
 
-      <el-form-item label="或上传图片">
+      <el-form-item :label="t('settings.upload')">
         <el-upload
           ref="uploadRef"
           action=""
@@ -48,25 +81,25 @@
           accept="image/*"
           :on-change="handleFileChange"
         >
-          <el-button type="success" :loading="uploading">选择图片上传</el-button>
+          <el-button type="success" :loading="uploading">{{ t('settings.uploadBtn') }}</el-button>
         </el-upload>
-        <div class="form-tip">支持 JPG/PNG/GIF，最大 5MB</div>
+        <div class="form-tip">{{ t('settings.uploadTip') }}</div>
       </el-form-item>
 
-      <el-form-item v-if="previewUrl" label="预览">
+      <el-form-item v-if="previewUrl" :label="t('settings.preview')">
         <div class="bg-preview" :style="{ backgroundImage: `url(${previewUrl})` }"></div>
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" @click="saveSettings">保存全局设置</el-button>
+        <el-button type="primary" @click="saveSettings">{{ t('settings.saveSettings') }}</el-button>
       </el-form-item>
 
       <!-- 已上传文件列表 -->
-      <el-divider>已上传的图片</el-divider>
+      <el-divider>{{ t('settings.uploadedFiles') }}</el-divider>
       
       <el-form-item>
         <el-button size="small" @click="fetchUploadedFiles" :loading="loadingFiles">
-          刷新列表
+          {{ t('settings.refreshList') }}
         </el-button>
       </el-form-item>
 
@@ -78,12 +111,12 @@
             <div class="file-meta">{{ formatSize(file.size) }} · {{ formatDate(file.uploadedAt) }}</div>
           </div>
           <div class="file-actions">
-            <el-button size="small" type="primary" @click="useAsBackground(file.url)">设为背景</el-button>
-            <el-button size="small" type="danger" @click="deleteFile(file.filename)">删除</el-button>
+            <el-button size="small" type="primary" @click="useAsBackground(file.url)">{{ t('settings.setBg') }}</el-button>
+            <el-button size="small" type="danger" @click="deleteFile(file.filename)">{{ t('common.delete') }}</el-button>
           </div>
         </div>
       </div>
-      <el-empty v-else-if="!loadingFiles" description="暂无上传的图片" :image-size="60" />
+      <el-empty v-else-if="!loadingFiles" :description="t('settings.noFiles')" :image-size="60" />
     </el-form>
   </div>
 </template>
@@ -92,6 +125,9 @@
 import { reactive, ref, watch, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAdminStore } from '@/store/admin';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface UploadedFile {
   filename: string;
@@ -156,25 +192,25 @@ const useAsBackground = async (url: string) => {
     },
     body: JSON.stringify({ url })
   });
-  ElMessage.success('背景图已设置');
+  ElMessage.success(t('admin.updateSuccess'));
 };
 
 const deleteFile = async (filename: string) => {
   try {
-    await ElMessageBox.confirm('确定要删除这个图片吗？', '确认删除', { type: 'warning' });
+    await ElMessageBox.confirm(t('settings.deleteConfirm'), t('common.confirm'), { type: 'warning' });
     const res = await fetch(`/api/uploads/${encodeURIComponent(filename)}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${adminStore.token}` }
     });
     const data = await res.json();
     if (data.success) {
-      ElMessage.success('删除成功');
+      ElMessage.success(t('admin.deleteSuccess'));
       fetchUploadedFiles();
     } else {
-      ElMessage.error(data.error || '删除失败');
+      ElMessage.error(data.error || t('common.fail'));
     }
   } catch (err) {
-    if (err !== 'cancel') ElMessage.error('删除失败');
+    if (err !== 'cancel') ElMessage.error(t('common.fail'));
   }
 };
 
@@ -198,13 +234,13 @@ const handleFileChange = async (file: any) => {
         
         const data = await response.json();
         if (data.success) {
-          ElMessage.success('图片上传成功！');
+          ElMessage.success(t('admin.addSuccess'));
           fetchUploadedFiles();
         } else {
-          ElMessage.error(data.error || '上传失败');
+          ElMessage.error(data.error || t('common.fail'));
         }
       } catch (err) {
-        ElMessage.error('上传失败');
+        ElMessage.error(t('common.fail'));
       } finally {
         uploading.value = false;
       }
@@ -214,6 +250,12 @@ const handleFileChange = async (file: any) => {
     ElMessage.error('上传失败');
     uploading.value = false;
   }
+};
+
+const fillDefaultFooter = () => {
+  const currentYear = new Date().getFullYear();
+  const siteName = settings.siteName || t('notification.siteName');
+  settings.footerHtml = `&copy; ${currentYear} <a href="https://github.com/starwishes/Nav" target="_blank">${siteName}</a>. All Rights Reserved.`;
 };
 
 const saveSettings = async () => {

@@ -88,23 +88,23 @@
         <div class="menu-item" @click="togglePin">
           <el-icon v-if="contextMenu.item?.pinned"><Bottom /></el-icon>
           <el-icon v-else><Top /></el-icon>
-          {{ contextMenu.item?.pinned ? '取消置顶' : '置顶' }}
+          {{ contextMenu.item?.pinned ? t('context.unpin') : t('context.pin') }}
         </div>
-        <div class="menu-item" @click="startMove"><el-icon><Rank /></el-icon> 移动位置</div>
-        <div class="menu-item" @click="handleEdit"><el-icon><Edit /></el-icon> 编辑</div>
-        <div class="menu-item delete" @click="handleDelete"><el-icon><Delete /></el-icon> 删除</div>
+        <div class="menu-item" @click="startMove"><el-icon><Rank /></el-icon> {{ t('context.move') }}</div>
+        <div class="menu-item" @click="handleEdit"><el-icon><Edit /></el-icon> {{ t('common.edit') }}</div>
+        <div class="menu-item delete" @click="handleDelete"><el-icon><Delete /></el-icon> {{ t('common.delete') }}</div>
       </template>
       <template v-else-if="contextMenu.category">
         <div class="menu-item" :class="{ disabled: isFirstCategory }" @click="!isFirstCategory && moveCategory(-1)">
-          <el-icon><SortUp /></el-icon> 上移分类
+          <el-icon><SortUp /></el-icon> {{ t('context.moveUp') }}
         </div>
         <div class="menu-item" :class="{ disabled: isLastCategory }" @click="!isLastCategory && moveCategory(1)">
-          <el-icon><SortDown /></el-icon> 下移分类
+          <el-icon><SortDown /></el-icon> {{ t('context.moveDown') }}
         </div>
         <div class="menu-item" @click="toggleCategoryPrivate">
           <el-icon v-if="contextMenu.category.private"><View /></el-icon>
           <el-icon v-else><Hide /></el-icon>
-          {{ contextMenu.category.private ? '取消隐藏 (设为公开)' : '隐藏分类 (仅登录可见)' }}
+          {{ contextMenu.category.private ? t('context.show') : t('context.hide') }}
         </div>
       </template>
     </div>
@@ -141,6 +141,9 @@ import {
   Rank, Edit, Delete, Top, Bottom, 
   View, Hide, SortUp, SortDown 
 } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Store & Config
 import { useMainStore } from '@/store'

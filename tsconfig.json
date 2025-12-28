@@ -24,16 +24,16 @@
     /* 使用@映射至src目录 */
     "paths": {
       "@/*": [
-        "./src/*"
+        "./frontend/*"
       ]
     }
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "src/utils/index.ts"
+    "frontend/**/*.ts",
+    "frontend/**/*.d.ts",
+    "frontend/**/*.tsx",
+    "frontend/**/*.vue",
+    "frontend/utils/index.ts"
   ],
   "references": [
     {

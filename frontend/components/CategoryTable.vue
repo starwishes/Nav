@@ -1,20 +1,20 @@
 <template>
   <el-table :data="categories" border stripe>
-    <el-table-column prop="id" label="ID" width="80" align="center" />
-    <el-table-column prop="name" label="分类名称" align="center" />
-    <el-table-column label="可见性" width="100" align="center">
+    <el-table-column prop="id" :label="t('table.id')" width="80" align="center" />
+    <el-table-column prop="name" :label="t('table.name')" align="center" />
+    <el-table-column :label="t('table.visibility')" width="100" align="center">
       <template #default="{ row }">
         <el-tag :type="row.private ? 'danger' : 'success'" effect="plain">
-          {{ row.private ? '私有' : '公开' }}
+          {{ row.private ? t('table.private') : t('table.public') }}
         </el-tag>
       </template>
     </el-table-column>
-    <el-table-column label="网站数量" width="120" align="center">
+    <el-table-column :label="t('table.siteCount')" width="120" align="center">
       <template #default="{ row }">
         <el-tag size="small">{{ getItemCount(row.id) }}</el-tag>
       </template>
     </el-table-column>
-    <el-table-column label="操作" width="200" align="center" fixed="right">
+    <el-table-column :label="t('table.action')" width="200" align="center" fixed="right">
       <template #default="{ row }">
         <el-button 
           type="primary" 
@@ -22,7 +22,7 @@
           :icon="EditIcon"
           @click="$emit('edit', row)"
         >
-          编辑
+          {{ t('table.edit') }}
         </el-button>
         <el-button 
           type="danger" 
@@ -30,7 +30,7 @@
           :icon="DeleteIcon"
           @click="$emit('delete', row)"
         >
-          删除
+          {{ t('table.delete') }}
         </el-button>
       </template>
     </el-table-column>
@@ -40,6 +40,9 @@
 <script setup lang="ts">
 import { Edit, Delete } from '@element-plus/icons-vue';
 import { Category, Item } from '@/types';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const EditIcon = Edit;
 const DeleteIcon = Delete;

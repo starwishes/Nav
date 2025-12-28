@@ -2,22 +2,31 @@
   <div class="hs-clock">
     <div class="time">
       <span ref="hour" class="hour">{{ hours }}</span>
-      <div class="text">时</div>
+      <div class="text">{{ separator1 }}</div>
       <span ref="minute" class="minute">{{ minutes }}</span>
-      <div class="text">分</div>
+      <div class="text">{{ separator2 }}</div>
       <span ref="second" class="second">{{ seconds }}</span>
-      <div class="text">秒</div>
+      <template v-if="isZh">
+        <div class="text">秒</div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { locale } = useI18n();
 
 const hours = ref('00')
 const minutes = ref('00')
 const seconds = ref('00')
 const timezone = ref('')
+const isZh = computed(() => locale.value === 'zh-CN');
+
+const separator1 = computed(() => isZh.value ? '时' : ':');
+const separator2 = computed(() => isZh.value ? '分' : ':');
 
 const fetchTimezone = async () => {
   try {
@@ -78,10 +87,12 @@ onMounted(async () => {
       align-items: center;
       font-size: 20px;
       font-weight: 500;
+      font-family: 'JetBrains Mono', 'Roboto Mono', monospace; // Use monospace font for better alignment in EN
     }
     .text {
       font-size: 14px;
       margin: 0 4px;
+      line-height: 1;
     }
   }
 }

@@ -1,18 +1,18 @@
 import { createRouter, createWebHistory, RouteRecordRaw, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
-import { SITE_NAME } from '@/config'
+import i18n from '@/plugins/i18n'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Index',
     component: () => import('@/views/Index/index.vue'),
-    meta: { title: SITE_NAME }
+    meta: {} // Homepage defaults to site name
   },
   {
     path: '/admin/dashboard',
     name: 'AdminDashboard',
     component: () => import('@/views/AdminDashboard.vue'),
-    meta: { title: '后台管理 - ' + SITE_NAME }
+    meta: { titleKey: 'nav.admin' }
   }
 ]
 
@@ -21,9 +21,17 @@ const router = createRouter({
   routes
 })
 
+import { useMainStore } from '@/store'
+
 router.beforeEach((to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) => {
-  if (to.meta.title) {
-    document.title = to.meta.title as string;
+  const t = i18n.global.t;
+  const store = useMainStore();
+  const siteName = store.settings.siteName || t('notification.siteName');
+
+  if (to.meta.titleKey) {
+    document.title = `${t(to.meta.titleKey as string)} - ${siteName}`;
+  } else {
+    document.title = siteName;
   }
   next();
 });

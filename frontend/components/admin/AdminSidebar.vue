@@ -1,9 +1,9 @@
 <template>
   <aside class="admin-sidebar glass-effect" :class="{ 'mobile-visible': sidebarVisible }">
     <div class="sidebar-header">
-      <div class="logo-group">
+      <div class="logo-group" @click="$router.push('/')">
         <div class="logo-icon gradient-bg">N</div>
-        <h1 class="gradient-text">{{ SITE_NAME }}</h1>
+        <h1 class="gradient-text">{{ mainStore.settings?.siteName || t('notification.siteName') }}</h1>
       </div>
       <el-button v-if="isMobile" circle :icon="Close" @click="$emit('close-sidebar')" />
     </div>
@@ -17,7 +17,7 @@
         @click="$emit('menu-click', item.id)"
       >
         <el-icon><component :is="item.icon" /></el-icon>
-        <span class="menu-label">{{ item.label }}</span>
+        <span class="menu-label">{{ t('menu.' + getMenuKey(item.id)) }}</span>
       </div>
     </nav>
 
@@ -30,16 +30,19 @@
         </div>
       </div>
       <el-button class="logout-btn" plain @click="$emit('logout')">
-        <el-icon><SwitchButton /></el-icon> 退出
+        <el-icon><SwitchButton /></el-icon> {{ t('nav.logout') }}
       </el-button>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { SITE_NAME } from '@/config';
 import { useAdminStore } from '@/store/admin';
+import { useMainStore } from '@/store';
 import { Close, SwitchButton } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 defineProps<{
   sidebarVisible: boolean;
@@ -51,9 +54,19 @@ defineProps<{
 defineEmits(['close-sidebar', 'menu-click', 'logout']);
 
 const adminStore = useAdminStore();
+const mainStore = useMainStore();
 
-const getLevelName = (level: number) => ['游客', '注册用户', 'VIP用户', '管理员'][level] || '未知';
+const getLevelName = (level: number) => {
+  const keys = ['guest', 'user', 'vip', 'admin'];
+  return t(`userLevel.${keys[level] || 'unknown'}`);
+};
 const getLevelTag = (level: number) => ['info', '', 'warning', 'danger'][level] || 'info';
+
+const getMenuKey = (id: string) => {
+  // Map 'data' to 'dataManage' because key in locale is dataManage
+  if (id === 'data') return 'dataManage';
+  return id;
+}
 </script>
 
 <style scoped lang="scss">
@@ -79,6 +92,13 @@ const getLevelTag = (level: number) => ['info', '', 'warning', 'danger'][level] 
       display: flex;
       align-items: center;
       gap: 12px;
+      cursor: pointer;
+      transition: opacity 0.3s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+
       .logo-icon {
         width: 32px;
         height: 32px;
