@@ -24,7 +24,7 @@ RUN apk add --no-cache dumb-init
 WORKDIR /app
 
 # Create necessary directories and set ownership for non-root user
-RUN mkdir -p src/config && chown -R node:node /app
+RUN mkdir -p /app/data && chown -R node:node /app
 
 # Copy dependencies definition
 COPY --chown=node:node package*.json ./
@@ -39,14 +39,11 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --chown=node:node --from=build-stage /app/dist ./dist
 COPY --chown=node:node --from=build-stage /app/server.js ./
 COPY --chown=node:node --from=build-stage /app/backend ./backend
-COPY --chown=node:node --from=build-stage /app/src/config/data.json ./src/config/data.json
 
 # Set environment variables
-# JWT_SECRET 会自动生成，无需配置
-# ADMIN_USERNAME/ADMIN_PASSWORD 应通过 docker-compose 设置
-# CORS_ORIGINS 可通过 docker-compose 覆盖
 ENV NODE_ENV=production \
-    PORT=3333
+    PORT=3333 \
+    DATA_PATH=/app/data
 
 EXPOSE 3333
 

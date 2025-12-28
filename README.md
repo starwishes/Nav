@@ -1,11 +1,11 @@
-# 星语导航 (StarNav) v1.2.0
+# 星语导航 (StarNav) v1.2.1
 
 一个极简、美观、功能强大的个人/私有导航系统。
 A minimalist, beautiful, and powerful personal/private navigation system.
 
 **本项目基于开源项目 [CloudNav](https://github.com/sese972010/CloudNav) 进行深度开发与重构，旨在提供更完善的用户权限管理与更精致的 UI 体验。**
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/starwishes/Nav)
+[![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](https://github.com/starwishes/Nav)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Vue](https://img.shields.io/badge/vue-3.4.29-brightgreen.svg)](https://vuejs.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
