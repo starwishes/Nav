@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { getDb } from './database.js';
 import { DATA_DIR, getUserDataPath, DEFAULT_ADMIN_NAME } from '../config/index.js';
-import { logger } from './db.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * 从 JSON 文件迁移数据到 SQLite
@@ -10,23 +10,23 @@ import { logger } from './db.js';
  */
 export const migrateFromJson = () => {
     const db = getDb();
-    
+
     // 检查是否已有数据（避免重复迁移）
     const existingCategories = db.prepare('SELECT COUNT(*) as count FROM categories').get().count;
     if (existingCategories > 0) {
         logger.info('数据库已有数据，跳过迁移');
         return false;
     }
-    
+
     // 尝试找到 JSON 数据文件
     const jsonPaths = [
         path.join(DATA_DIR, 'data.json'),
         getUserDataPath(DEFAULT_ADMIN_NAME)
     ];
-    
+
     let jsonData = null;
     let sourceFile = null;
-    
+
     for (const jsonPath of jsonPaths) {
         if (fs.existsSync(jsonPath)) {
             try {
@@ -40,15 +40,15 @@ export const migrateFromJson = () => {
             }
         }
     }
-    
+
     if (!jsonData) {
         logger.info('未找到需要迁移的 JSON 数据');
         return false;
     }
-    
+
     // 开始迁移
     logger.info('开始数据迁移: JSON → SQLite');
-    
+
     const transaction = db.transaction(() => {
         // 迁移分类
         const categories = jsonData.categories || [];
@@ -56,7 +56,7 @@ export const migrateFromJson = () => {
             INSERT OR REPLACE INTO categories (id, name, icon, level, sort_order)
             VALUES (?, ?, ?, ?, ?)
         `);
-        
+
         categories.forEach((cat, index) => {
             insertCategory.run(
                 Number(cat.id),
@@ -67,7 +67,7 @@ export const migrateFromJson = () => {
             );
         });
         logger.info(`迁移分类: ${categories.length} 条`);
-        
+
         // 迁移书签
         const items = jsonData.items || [];
         const insertItem = db.prepare(`
@@ -75,7 +75,7 @@ export const migrateFromJson = () => {
             (id, name, url, description, icon, category_id, pinned, level, tags, click_count, last_visited, sort_order)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
-        
+
         items.forEach((item, index) => {
             insertItem.run(
                 Number(item.id),
@@ -94,15 +94,15 @@ export const migrateFromJson = () => {
         });
         logger.info(`迁移书签: ${items.length} 条`);
     });
-    
+
     try {
         transaction();
-        
+
         // 备份原 JSON 文件
         const backupPath = sourceFile + '.migrated.bak';
         fs.renameSync(sourceFile, backupPath);
         logger.info(`原 JSON 文件已备份: ${backupPath}`);
-        
+
         logger.info('数据迁移完成!');
         return true;
     } catch (err) {
@@ -117,38 +117,49 @@ export const migrateFromJson = () => {
 export const migrateUsers = () => {
     const db = getDb();
     const usersDir = path.join(DATA_DIR, 'users');
-    
+
     if (!fs.existsSync(usersDir)) {
         return false;
     }
-    
+
     const existingUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
     if (existingUsers > 0) {
         logger.info('用户表已有数据，跳过迁移');
         return false;
     }
-    
+
     const insertUser = db.prepare(`
         INSERT OR REPLACE INTO users (username, password, level, created_at)
         VALUES (?, ?, ?, datetime('now'))
     `);
-    
+
     try {
         const files = fs.readdirSync(usersDir).filter(f => f.endsWith('.json'));
-        
+
         files.forEach(file => {
             const username = path.basename(file, '.json');
             const userPath = path.join(usersDir, file);
             const userData = JSON.parse(fs.readFileSync(userPath, 'utf8'));
-            
+
+            // 智能判定等级：
+            // 1. 如果 JSON 中有 level，以 JSON 为准
+            // 2. 如果是默认管理员 (配置的用户名)，强制设为 3 (Admin)
+            // 3. 其他用户默认为 1 (User)，避免变成 0 (Guest)
+            let finalLevel = 1;
+            if (userData.level !== undefined) {
+                finalLevel = Number(userData.level);
+            } else if (username === DEFAULT_ADMIN_NAME || username === process.env.ADMIN_USERNAME) {
+                finalLevel = 3;
+            }
+
             insertUser.run(
                 username,
                 userData.password || '',
-                Number(userData.level || 0)
+                finalLevel
             );
             logger.info(`迁移用户: ${username}`);
         });
-        
+
         logger.info(`用户迁移完成: ${files.length} 个`);
         return true;
     } catch (err) {
@@ -163,21 +174,21 @@ export const migrateUsers = () => {
 export const migrateSettings = () => {
     const db = getDb();
     const settingsPath = path.join(DATA_DIR, 'settings.json');
-    
+
     if (!fs.existsSync(settingsPath)) {
         return false;
     }
-    
+
     try {
         const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
         const insertSetting = db.prepare(`
             INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)
         `);
-        
+
         Object.entries(settings).forEach(([key, value]) => {
             insertSetting.run(key, JSON.stringify(value));
         });
-        
+
         // 备份
         fs.renameSync(settingsPath, settingsPath + '.migrated.bak');
         logger.info('设置迁移完成');

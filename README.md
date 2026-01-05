@@ -1,11 +1,11 @@
-# 星语导航 (StarNav) v1.6.0
+# 星语导航 (StarNav) v1.6.1
 
 一个极简、美观、功能强大的个人/私有导航系统。
 A minimalist, beautiful, and powerful personal/private navigation system.
 
 **本项目基于开源项目 [CloudNav](https://github.com/sese972010/CloudNav) 进行深度开发与重构，旨在提供更完善的用户权限管理与更精致的 UI 体验。**
 
-[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/starwishes/Nav)
+[![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](https://github.com/starwishes/Nav)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Vue](https://img.shields.io/badge/vue-3.4.29-brightgreen.svg)](https://vuejs.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
@@ -22,6 +22,13 @@ A minimalist, beautiful, and powerful personal/private navigation system.
 | ⚡ **性能** | **微秒级响应**：内置 SQLite + 内存缓存 (L1 Cache)，Brotli 静态压缩，路由懒加载。 |
 | 🔒 **安全** | **全栈防护**：BCrypt 密码哈希，JWT 动态轮换，API 限流 (Rate Limiting)，CSRF/XSS 防御。 |
 | � **部署** | **开箱即用**：原生 Docker 支持，内置数据自动迁移 (Auto-Migrate)，零配置启动。 |
+
+### 🆕 v1.6.1 架构升级 (2026-01-05)
+
+- 🏗️ **深度重构**：前端 `Site.vue` 核心组件解耦，拆分为 `useSiteDrag` (拖拽)、`useSiteMenu` (菜单)、`useSiteFilter` (过滤) 独立逻辑，大幅降低维护成本。
+- 🧹 **后端清理**：移除 `proper-lockfile` 等冗余依赖，统一日志系统至 `logger.js`，代码更纯净。
+- 🛡️ **TypeScript 增强**：全栈类型定义统一，消除隐式 `any`，构建系统更加健壮。
+- 🐛 **扩展修复**：修复浏览器扩展的书签同步与显示问题。
 
 ### 🆕 v1.6.0 重大更新 (2026-01-05)
 

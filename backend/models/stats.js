@@ -1,5 +1,5 @@
 import { getDb } from '../services/database.js';
-import { logger } from '../services/db.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * 访问统计模型 (SQLite 版本)

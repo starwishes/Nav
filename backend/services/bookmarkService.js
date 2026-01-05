@@ -1,5 +1,5 @@
 import { getDb } from './database.js';
-import { logger } from './db.js';
+import { logger } from '../utils/logger.js';
 
 // 内存缓存：{ categories: [], items: [] } (Raw Data of all levels)
 let globalCache = null;
@@ -46,7 +46,9 @@ export const bookmarkService = {
             }));
 
             globalCache = { categories: allCategories, items: allItems };
-            logger.debug('Cache miss - Loaded data from DB');
+            logger.debug(`Cache miss - Loaded ${allCategories.length} cats, ${allItems.length} items from DB`);
+        } else {
+            logger.debug(`Cache hit - ${globalCache.items.length} items`);
         }
 
         // 2. 内存过滤 (按权限)
@@ -56,6 +58,8 @@ export const bookmarkService = {
         const items = globalCache.items.filter(i =>
             i.level <= visitorLevel && validCategoryIds.has(i.categoryId)
         );
+
+        logger.debug(`getData: Level=${visitorLevel}, ValidCats=${validCategoryIds.size}, ReturnItems=${items.length}`);
 
         return { categories, items };
     },
@@ -178,8 +182,8 @@ export const bookmarkService = {
             const sortOrder = db.prepare('SELECT COUNT(*) as count FROM items').get().count;
 
             db.prepare(`
-                INSERT INTO items (id, name, url, description, icon, category_id, pinned, level, tags, click_count, sort_order)
-                VALUES (?, ?, ?, ?, ?, ?, 0, ?, '[]', 0, ?)
+                INSERT INTO items (id, name, url, description, icon, category_id, pinned, level, tags, click_count, sort_order, last_visited)
+                VALUES (?, ?, ?, ?, ?, ?, 0, ?, '[]', 0, ?, ?)
             `).run(
                 newId,
                 itemData.name || 'Untitled',
@@ -188,7 +192,8 @@ export const bookmarkService = {
                 itemData.icon || '',
                 Number(itemData.categoryId),
                 Number(itemData.minLevel || 0),
-                sortOrder
+                sortOrder,
+                Date.now() // 新增书签视为最近访问，确保出现在列表中
             );
 
             const newItem = {
@@ -302,6 +307,8 @@ export const bookmarkService = {
                 LIMIT ?
             `).all(`%${lowerKeyword}%`, `%${lowerKeyword}%`, `%${lowerKeyword}%`, limit);
         }
+
+        logger.debug(`searchItems: key="${keyword}", limit=${limit}, found=${items.length}`);
 
         return items.map(item => ({
             id: item.id,

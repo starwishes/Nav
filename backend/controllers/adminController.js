@@ -1,5 +1,7 @@
 import { accountService } from '../services/accountService.js';
 import { auditService } from '../services/auditService.js';
+import { settingsService } from '../services/settingsService.js';
+import { logger } from '../utils/logger.js';
 import { strongPasswordSchema } from '../middleware/validation.js';
 
 export const adminController = {

@@ -1,6 +1,9 @@
 import archiver from 'archiver';
 import path from 'path';
 import fs from 'fs';
+import { accountService } from '../services/accountService.js';
+import { logger } from '../utils/logger.js';
+import { UPLOADS_DIR } from '../config/index.js';
 import { fileURLToPath } from 'url';
 import { successResponse, errorResponse } from '../utils/response.js';
 

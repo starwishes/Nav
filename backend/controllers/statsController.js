@@ -1,5 +1,6 @@
-import { Stats } from '../models/stats.js';
+import { StatsLogger } from '../models/stats.js';
 import { UAParser } from 'ua-parser-js';
+import { logger } from '../utils/logger.js';
 
 export const statsController = {
     getStats: (req, res) => {

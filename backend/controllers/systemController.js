@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { db, logger } from '../services/db.js';
+import { accountService } from '../services/accountService.js';
+// import { db } from '../services/db.js'; // Deprecated
+import { logger } from '../utils/logger.js';
 import { settingsService } from '../services/settingsService.js';
 import { UPLOADS_DIR } from '../config/index.js';
 
@@ -8,7 +10,7 @@ export const systemController = {
     getHealth: (req, res) => {
         res.json({
             status: 'ok',
-            version: '1.6.0',
+            version: '1.6.1',
             timestamp: new Date().toISOString(),
             uptime: process.uptime()
         });
@@ -44,7 +46,7 @@ export const systemController = {
 
             const buffer = Buffer.from(matches[2], 'base64');
             const filename = `bg_${Date.now()}.${matches[1] === 'jpeg' ? 'jpg' : matches[1]}`;
-            db.ensureDir(UPLOADS_DIR);
+            if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
             fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
 
             const url = `/uploads/${filename}`;
@@ -68,7 +70,7 @@ export const systemController = {
             const buffer = Buffer.from(matches[2], 'base64');
             const filename = `icon_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${cleanExt}`;
 
-            db.ensureDir(UPLOADS_DIR);
+            if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
             fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
 
             res.json({ success: true, url: `/uploads/${filename}` });
@@ -80,7 +82,7 @@ export const systemController = {
 
     getUploads: (req, res) => {
         try {
-            db.ensureDir(UPLOADS_DIR);
+            if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
             const files = fs.readdirSync(UPLOADS_DIR)
                 .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f))
                 .map(filename => {

@@ -1,5 +1,5 @@
 import { getDb } from './database.js';
-import { logger } from './db.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * 回收站服务 (SQLite 版本)

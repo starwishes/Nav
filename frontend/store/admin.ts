@@ -1,19 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { SiteConfig } from '@/types';
-import type { SystemSettings, User, ProfileUpdateData } from '@/api';
-
-interface AuthUser {
-  login: string;
-  name: string;
-  level: number;
-  avatar_url?: string;
-}
-
-interface AuthResult {
-  success: boolean;
-  error?: string;
-}
+import type { SiteConfig, AuthUser, AuthResult, User } from '@/types';
+import type { SystemSettings, ProfileUpdateData } from '@/api';
 
 export const useAdminStore = defineStore('admin', () => {
   const token = ref<string | null>(localStorage.getItem('admin_token'));

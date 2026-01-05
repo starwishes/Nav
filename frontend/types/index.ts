@@ -20,7 +20,6 @@ export interface Item {
     icon?: string;            // 自定义图标 URL
 }
 
-
 export interface SiteConfig {
     categories: Category[];
     items: Item[];
@@ -33,3 +32,21 @@ export interface ImportedBookmarkItem {
     categoryName: string;
 }
 
+// User related
+export interface User {
+    username: string;
+    level: number;
+    created_at?: string;
+}
+
+export interface AuthUser {
+    login: string;
+    name: string;
+    level: number;
+    avatar_url?: string;
+}
+
+export interface AuthResult {
+    success: boolean;
+    error?: string;
+}

@@ -1,0 +1,19 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "常用推荐",
+      "private": false,
+      "level": 0
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "name": "Google",
+      "url": "https://www.google.com",
+      "categoryId": 1,
+      "pinned": true
+    }
+  ]
+}

@@ -1,10 +1,10 @@
-import fs from 'fs';
 
 // 日志级别：0=silent, 1=error, 2=warn, 3=info (默认), 4=debug
 const LOG_LEVEL = parseInt(process.env.LOG_LEVEL || '3', 10);
 
 /**
- * 日志工具（支持日志级别控制）
+ * 统一日志工具 (Logger)
+ * 支持多级别日志输出，受环境变量 LOG_LEVEL 控制
  */
 export const logger = {
     debug: (msg, data = {}) => {
@@ -19,19 +19,4 @@ export const logger = {
     error: (msg, err = {}) => {
         if (LOG_LEVEL >= 1) console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, err);
     },
-};
-
-/**
- * 文件系统工具
- * 注: read/write 函数已废弃，数据存储已迁移到 SQLite
- */
-export const db = {
-    /**
-     * 确保目录存在
-     */
-    ensureDir(dirPath) {
-        if (!fs.existsSync(dirPath)) {
-            fs.mkdirSync(dirPath, { recursive: true });
-        }
-    }
 };

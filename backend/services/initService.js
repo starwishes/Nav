@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import { db, logger } from './db.js';
 import { getDb } from './database.js';
+
 import { runMigration } from './migrate.js';
-import { DATA_DIR, DEFAULT_ADMIN_NAME } from '../config/index.js';
+import { DATA_DIR, UPLOADS_DIR, DEFAULT_ADMIN_NAME, DEFAULT_CONFIG } from '../config/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * 系统初始化服务 (SQLite 版本)
@@ -14,8 +15,8 @@ export const initService = {
         logger.info('正在初始化系统...');
 
         // 确保目录存在
-        db.ensureDir(DATA_DIR);
-        db.ensureDir(path.join(DATA_DIR, 'uploads'));
+        if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+        if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
         // 初始化数据库 (会自动创建 schema)
         getDb();
@@ -84,13 +85,13 @@ export const initService = {
 
             if (isNew) {
                 db.prepare(`
-                    INSERT INTO users (username, password, level, created_at)
-                    VALUES (?, ?, 3, datetime('now'))
+                    INSERT INTO users(username, password, level, created_at)
+VALUES(?, ?, 3, datetime('now'))
                 `).run(adminUsername, hashed);
-                logger.info(`管理员账户 [${adminUsername}] 初始化成功`);
+                logger.info(`管理员账户[${adminUsername}]初始化成功`);
             } else {
                 db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashed, adminUsername);
-                logger.warn(`安全预警：检测到管理员账户 [${adminUsername}] 使用危险默认密码，系统已执行强制重置`);
+                logger.warn(`安全预警：检测到管理员账户[${adminUsername}]使用危险默认密码，系统已执行强制重置`);
             }
 
             if (isRandom) {
@@ -100,8 +101,8 @@ export const initService = {
                 console.log('检测到当前管理员密码为默认值 "admin123"');
                 console.log('出于安全理由，系统已为您生成了高强度密码：');
                 console.log('');
-                console.log(`管理员账户: ${adminUsername}`);
-                console.log(`新的初始密码: ${finalPassword}`);
+                console.log(`管理员账户: ${adminUsername} `);
+                console.log(`新的初始密码: ${finalPassword} `);
                 console.log('');
                 console.log('请务必妥善记录并在首次登录后通过后台再次修改！');
                 console.log('★'.repeat(50) + '\n');
@@ -111,9 +112,14 @@ export const initService = {
             if (rawAdminPassword && !bcrypt.compareSync(rawAdminPassword, adminUser.password)) {
                 const hashed = bcrypt.hashSync(rawAdminPassword, 10);
                 db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashed, adminUsername);
-                logger.info(`管理员账户 [${adminUsername}] 密码已通过环境变量成功强制更新`);
+                logger.info(`管理员账户[${adminUsername}]密码已通过环境变量成功强制更新`);
             } else {
-                logger.info(`管理员账户 [${adminUsername}] 验证状态：OK`);
+                // 强制确保管理员等级正确 (防止意外降级)
+                if (adminUser.level < 3) {
+                    db.prepare('UPDATE users SET level = 3 WHERE username = ?').run(adminUsername);
+                    logger.warn(`管理员账户[${adminUsername}]权限等级已自动修复(0 -> 3)`);
+                }
+                logger.info(`管理员账户[${adminUsername}]验证状态：OK`);
             }
         }
     },
@@ -147,15 +153,15 @@ export const initService = {
         if (categoryCount === 0) {
             // 插入默认分类
             db.prepare(`
-                INSERT INTO categories (id, name, icon, level, sort_order)
-                VALUES (1, '常用推荐', '', 0, 0)
-            `).run();
+                INSERT INTO categories(id, name, icon, level, sort_order)
+VALUES(1, '常用推荐', '', 0, 0)
+    `).run();
 
             // 插入默认书签
             db.prepare(`
-                INSERT INTO items (id, name, url, description, category_id, pinned, level, tags, sort_order)
-                VALUES (1, 'Google', 'https://www.google.com', '全球最大搜索引擎', 1, 1, 0, '[]', 0)
-            `).run();
+                INSERT INTO items(id, name, url, description, category_id, pinned, level, tags, sort_order)
+VALUES(1, 'Google', 'https://www.google.com', '全球最大搜索引擎', 1, 1, 0, '[]', 0)
+    `).run();
 
             logger.info('已创建默认分类和书签');
         }

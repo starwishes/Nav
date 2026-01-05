@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { DATA_DIR } from '../config/index.js';
-import { logger } from './db.js';
+import { logger } from '../utils/logger.js';
 
 // 数据库文件路径
 const DB_PATH = path.join(DATA_DIR, 'starnav.db');

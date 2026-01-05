@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { getDb } from './database.js';
-import { logger } from './db.js';
+import { logger } from '../utils/logger.js';
 
 const SESSION_EXPIRE_DAYS = 7;
 

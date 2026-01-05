@@ -1,5 +1,6 @@
 import { bookmarkService } from '../services/bookmarkService.js';
-import { logger } from '../services/db.js';
+import { logger } from '../utils/logger.js';
+import { UPLOADS_DIR } from '../config/index.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { DEFAULT_ADMIN_NAME } from '../config/index.js';
 

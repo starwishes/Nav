@@ -1,5 +1,5 @@
 import { sessionService } from '../services/sessionService.js';
-import { auditService } from '../services/auditService.js';
+import { logger } from '../utils/logger.js';
 
 const getClientIP = (req) => {
     return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||

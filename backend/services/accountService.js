@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { getDb } from './database.js';
-import { logger } from './db.js';
+import { logger } from '../utils/logger.js';
 import { USER_LEVEL } from '../../common/constants.js';
 
 /**

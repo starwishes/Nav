@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/index.js';
-import { logger } from '../services/db.js';
+import { logger } from '../utils/logger.js';
 import { USER_LEVEL } from '../../common/constants.js';
 
 export const authenticate = (req, res, next) => {

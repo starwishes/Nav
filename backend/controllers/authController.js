@@ -5,7 +5,7 @@ import { sessionService } from '../services/sessionService.js';
 import { auditService } from '../services/auditService.js';
 import { loginSchema, strongPasswordSchema } from '../middleware/validation.js';
 import { JWT_SECRET } from '../config/index.js';
-import { logger } from '../services/db.js';
+import { logger } from '../utils/logger.js';
 import { settingsService } from '../services/settingsService.js';
 
 // 获取客户端 IP

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 
 // 导入后端核心模块 (从 backend 目录)
 import { initService } from './backend/services/initService.js';
-import { logger } from './backend/services/db.js';
+import { logger } from './backend/utils/logger.js';
 import { UPLOADS_DIR } from './backend/config/index.js';
 
 // 导入路由模块
@@ -147,6 +147,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 StarNav Server v1.6.0`);
+  console.log(`\n🚀 StarNav Server v1.6.1`);
   console.log(`   Running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });
