@@ -1,55 +1,46 @@
 import crypto from 'crypto';
-import { db, logger } from './db.js';
-import { SESSIONS_PATH } from '../config/index.js';
+import { getDb } from './database.js';
+import { logger } from './db.js';
 
-const SESSION_EXPIRE_DAYS = 7; // 会话过期天数
+const SESSION_EXPIRE_DAYS = 7;
 
 /**
- * 会话管理服务
+ * 会话管理服务 (SQLite 版本)
  */
 export const sessionService = {
     /**
      * 创建新会话
      */
     create(username, ip, userAgent) {
-        const sessions = db.read(SESSIONS_PATH, []);
+        const db = getDb();
+
+        // 计算过期时间
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + SESSION_EXPIRE_DAYS);
 
         // 查找是否存在相同用户、IP 和设备且未过期的会话
-        const existingSession = sessions.find(s =>
-            s.username === username &&
-            s.ip === ip &&
-            s.userAgent === userAgent
-        );
+        const existingSession = db.prepare(`
+            SELECT session_id, expires_at FROM sessions 
+            WHERE username = ? AND ip = ? AND user_agent = ? AND expires_at > datetime('now')
+        `).get(username, ip, userAgent);
 
         if (existingSession) {
-            // 检查是否过期
-            const expireTime = new Date(existingSession.createdAt);
-            expireTime.setDate(expireTime.getDate() + SESSION_EXPIRE_DAYS);
-
-            if (new Date() < expireTime) {
-                // 会话仍然有效，更新活跃时间并返回
-                existingSession.lastActiveAt = new Date().toISOString();
-                db.write(SESSIONS_PATH, sessions);
-                logger.info(`复用现有会话: ${username} (${existingSession.sessionId.substring(0, 8)}...)`);
-                return existingSession.sessionId;
-            }
+            // 会话仍然有效，更新活跃时间
+            db.prepare(`UPDATE sessions SET last_active_at = datetime('now') WHERE session_id = ?`)
+                .run(existingSession.session_id);
+            logger.info(`复用现有会话: ${username} (${existingSession.session_id.substring(0, 8)}...)`);
+            return existingSession.session_id;
         }
 
+        // 创建新会话
         const sessionId = crypto.randomBytes(16).toString('hex');
 
-        const session = {
-            sessionId,
-            username,
-            ip,
-            userAgent,
-            createdAt: new Date().toISOString(),
-            lastActiveAt: new Date().toISOString()
-        };
+        db.prepare(`
+            INSERT INTO sessions (session_id, username, ip, user_agent, expires_at)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(sessionId, username, ip, userAgent, expiresAt.toISOString());
 
-        sessions.push(session);
-        db.write(SESSIONS_PATH, sessions);
         logger.info(`创建新会话: ${username} (${sessionId.substring(0, 8)}...)`);
-
         return sessionId;
     },
 
@@ -59,23 +50,20 @@ export const sessionService = {
     validate(sessionId) {
         if (!sessionId) return false;
 
-        const sessions = db.read(SESSIONS_PATH, []);
-        const session = sessions.find(s => s.sessionId === sessionId);
+        const db = getDb();
+        const session = db.prepare(`
+            SELECT * FROM sessions WHERE session_id = ? AND expires_at > datetime('now')
+        `).get(sessionId);
 
-        if (!session) return false;
-
-        // 检查是否过期
-        const expireTime = new Date(session.createdAt);
-        expireTime.setDate(expireTime.getDate() + SESSION_EXPIRE_DAYS);
-
-        if (new Date() > expireTime) {
+        if (!session) {
+            // 清理过期会话
             this.revoke(sessionId);
             return false;
         }
 
         // 更新最后活跃时间
-        session.lastActiveAt = new Date().toISOString();
-        db.write(SESSIONS_PATH, sessions);
+        db.prepare(`UPDATE sessions SET last_active_at = datetime('now') WHERE session_id = ?`)
+            .run(sessionId);
 
         return true;
     },
@@ -84,13 +72,11 @@ export const sessionService = {
      * 撤销会话
      */
     revoke(sessionId) {
-        const sessions = db.read(SESSIONS_PATH, []);
-        const index = sessions.findIndex(s => s.sessionId === sessionId);
+        const db = getDb();
+        const result = db.prepare('DELETE FROM sessions WHERE session_id = ?').run(sessionId);
 
-        if (index > -1) {
-            const removed = sessions.splice(index, 1)[0];
-            db.write(SESSIONS_PATH, sessions);
-            logger.info(`会话撤销: ${removed.username} (${sessionId.substring(0, 8)}...)`);
+        if (result.changes > 0) {
+            logger.info(`会话撤销: ${sessionId.substring(0, 8)}...`);
             return true;
         }
         return false;
@@ -100,33 +86,40 @@ export const sessionService = {
      * 获取用户的所有会话
      */
     getByUsername(username) {
-        const sessions = db.read(SESSIONS_PATH, []);
-        return sessions
-            .filter(s => s.username === username)
-            .map(s => ({
-                sessionId: s.sessionId,
-                ip: s.ip,
-                userAgent: s.userAgent,
-                createdAt: s.createdAt,
-                lastActiveAt: s.lastActiveAt
-            }));
+        const db = getDb();
+        return db.prepare(`
+            SELECT session_id as sessionId, ip, user_agent as userAgent, 
+                   created_at as createdAt, last_active_at as lastActiveAt
+            FROM sessions 
+            WHERE username = ? AND expires_at > datetime('now')
+            ORDER BY last_active_at DESC
+        `).all(username);
     },
 
     /**
      * 撤销用户的其他会话
      */
     revokeOthers(username, currentSessionId) {
-        const sessions = db.read(SESSIONS_PATH, []);
-        const newSessions = sessions.filter(
-            s => !(s.username === username && s.sessionId !== currentSessionId)
-        );
+        const db = getDb();
+        const result = db.prepare(`
+            DELETE FROM sessions WHERE username = ? AND session_id != ?
+        `).run(username, currentSessionId);
 
-        const revokedCount = sessions.length - newSessions.length;
-        db.write(SESSIONS_PATH, newSessions);
-
-        if (revokedCount > 0) {
-            logger.info(`撤销 ${username} 的 ${revokedCount} 个其他会话`);
+        if (result.changes > 0) {
+            logger.info(`撤销 ${username} 的 ${result.changes} 个其他会话`);
         }
-        return revokedCount;
+        return result.changes;
+    },
+
+    /**
+     * 清理过期会话
+     */
+    cleanup() {
+        const db = getDb();
+        const result = db.prepare(`DELETE FROM sessions WHERE expires_at <= datetime('now')`).run();
+        if (result.changes > 0) {
+            logger.info(`清理了 ${result.changes} 个过期会话`);
+        }
+        return result.changes;
     }
 };

@@ -1,12 +1,12 @@
 import express from 'express';
 import { bookmarkController } from '../controllers/bookmarkController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { dataUpdateLimiter } from '../middleware/limiter.js';
 
 const router = express.Router();
 
-// 公开接口 (带可选 Token 解析)
-router.get('/data', bookmarkController.getData);
+// 公开接口 (带可选 Token 解析，登录用户可看到有权限的内容)
+router.get('/data', optionalAuth, bookmarkController.getData);
 
 // 受保护接口 (需登录 + 限流)
 router.post('/data', authenticate, dataUpdateLimiter, bookmarkController.saveData);

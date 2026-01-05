@@ -16,6 +16,7 @@ router.post('/admin/settings', authenticate, requireAdmin, systemController.upda
 // Background Management (Protected)
 router.post('/set-background', authenticate, requireAdmin, systemController.setBackground);
 router.post('/upload-background', authenticate, requireAdmin, systemController.uploadBackground);
+router.post('/upload-icon', authenticate, systemController.uploadIcon);
 router.get('/uploads', authenticate, requireAdmin, systemController.getUploads);
 router.delete('/uploads/:filename', authenticate, requireAdmin, systemController.deleteUpload);
 

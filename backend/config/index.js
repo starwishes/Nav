@@ -13,12 +13,14 @@ const ROOT_DIR = path.resolve(__dirname, '../../');
 // 在 Docker 环境中通常会被设置为 /app/data
 export const DATA_DIR = process.env.DATA_PATH || path.join(ROOT_DIR, 'data');
 
+// 保留的路径常量
+export const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+export const JWT_SECRET_PATH = path.join(DATA_DIR, '.jwt_secret');
+
+// 已废弃的路径常量 (保留向后兼容，后续版本移除)
+// @deprecated - 数据已迁移到 SQLite
 export const ACCOUNTS_PATH = path.join(DATA_DIR, 'accounts.json');
 export const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
-export const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
-export const AUDIT_LOG_PATH = path.join(DATA_DIR, 'audit.json');
-export const SESSIONS_PATH = path.join(DATA_DIR, 'sessions.json');
-export const JWT_SECRET_PATH = path.join(DATA_DIR, '.jwt_secret');
 
 /**
  * 默认管理员名称 (主数据拥有者)

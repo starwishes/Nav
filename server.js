@@ -147,6 +147,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 StarNav Server v1.5.0`);
+  console.log(`\n🚀 StarNav Server v1.6.0`);
   console.log(`   Running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });

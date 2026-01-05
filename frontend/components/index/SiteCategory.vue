@@ -31,7 +31,7 @@
           <!-- 书签卡片 -->
           <SiteCard 
             :item="item" 
-            :favicon-url="`${Favicon}${item.url}`"
+            :favicon-url="item.icon || `${Favicon}${item.url}`"
             @click="(e) => $emit('item-click', { item, event: e })"
             @contextmenu="(e) => $emit('item-contextmenu', { item, itemIndex, event: e })"
             @touchstart="(e) => $emit('item-touchstart', { item, itemIndex, event: e })"

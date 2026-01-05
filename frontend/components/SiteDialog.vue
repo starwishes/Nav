@@ -74,6 +74,36 @@
         </div>
       </el-form-item>
 
+      <el-form-item :label="t('site.icon')">
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+          <el-input 
+            v-model="localForm.icon" 
+            :placeholder="t('site.iconPlaceholder')"
+            style="flex: 1;"
+          />
+          <el-upload
+            action=""
+            :auto-upload="false"
+            :show-file-list="false"
+            accept="image/*"
+            :on-change="handleIconUpload"
+            :disabled="uploadingIcon"
+          >
+            <el-button :loading="uploadingIcon" size="default" style="padding: 0 12px;">{{ t('site.upload') }}</el-button>
+          </el-upload>
+          <img 
+            v-if="localForm.icon" 
+            :src="localForm.icon" 
+            class="icon-preview"
+            @error="handleIconError"
+          />
+          <div v-else class="icon-preview-placeholder">?</div>
+        </div>
+        <div style="margin-top: 5px; font-size: 12px; color: #909399;">
+          {{ t('site.iconTip') }}
+        </div>
+      </el-form-item>
+
       <el-form-item :label="t('site.pinned')">
         <el-switch 
           v-model="localForm.pinned" 
@@ -85,7 +115,7 @@
 
     <template #footer>
       <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" @click="handleSave" :loading="saving">{{ t('common.confirm') }}</el-button>
+      <el-button type="primary" @click="handleSave">{{ t('common.confirm') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -101,15 +131,17 @@ import { normalizeUrl } from '@common/url';
 // @ts-ignore
 import { USER_LEVEL } from '@common/constants';
 
+import { useAdminStore } from '@/store/admin';
+
 const { t } = useI18n();
 const dataStore = useDataStore();
+const adminStore = useAdminStore();
 
 const props = defineProps<{
   modelValue: boolean;
   form: Partial<Item>;
   categories: Category[];
   isEdit: boolean;
-  saving?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -125,6 +157,7 @@ const visible = computed({
 
 // 本地状态，避免直接修改 props
 const localForm = ref<Partial<Item>>({});
+const uploadingIcon = ref(false);
 
 // 当弹窗打开或 props.form 变化时，拷贝数据
 watch(() => props.modelValue, (val) => {
@@ -146,6 +179,51 @@ const availableTags = computed(() => {
 const handleClose = () => {
   visible.value = false;
 };
+
+// 图标加载失败时清空
+const handleIconError = () => {
+  localForm.value.icon = '';
+};
+
+// 处理图标上传
+const handleIconUpload = async (file: any) => {
+  if (!file.raw) return;
+  
+  uploadingIcon.value = true;
+  try {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const base64Data = e.target?.result as string;
+        const response = await fetch('/api/upload-icon', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminStore.token}`
+          },
+          body: JSON.stringify({ data: base64Data })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          localForm.value.icon = data.url;
+          ElMessage.success(t('site.uploadSuccess') || '上传成功');
+        } else {
+          ElMessage.error(data.error || t('common.fail'));
+        }
+      } catch (err) {
+        ElMessage.error(t('common.fail'));
+      } finally {
+        uploadingIcon.value = false;
+      }
+    };
+    reader.readAsDataURL(file.raw);
+  } catch (err) {
+    ElMessage.error('上传失败');
+    uploadingIcon.value = false;
+  }
+};
+
 
 const handleSave = () => {
   if (!localForm.value.name || !localForm.value.url) {
@@ -189,3 +267,27 @@ const handleSave = () => {
   emit('save', finalData);
 };
 </script>
+
+<style scoped>
+.icon-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.icon-preview-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+</style>

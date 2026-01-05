@@ -1,46 +1,38 @@
 import fs from 'fs';
 import path from 'path';
 import { db, logger } from '../services/db.js';
-import { SETTINGS_PATH, UPLOADS_DIR } from '../config/index.js';
+import { settingsService } from '../services/settingsService.js';
+import { UPLOADS_DIR } from '../config/index.js';
 
 export const systemController = {
     getHealth: (req, res) => {
         res.json({
             status: 'ok',
-            version: '1.3.5',
+            version: '1.6.0',
             timestamp: new Date().toISOString(),
             uptime: process.uptime()
         });
     },
 
     getPublicSettings: (req, res) => {
-        const settings = db.read(SETTINGS_PATH, {});
-        res.json({
-            registrationEnabled: settings.registrationEnabled,
-            backgroundUrl: settings.backgroundUrl || '',
-            timezone: settings.timezone || '',
-            homeUrl: settings.homeUrl || '',
-            footerHtml: settings.footerHtml || '',
-            siteName: settings.siteName || ''
-        });
+        res.json(settingsService.getPublic());
     },
 
     getAdminSettings: (req, res) => {
-        // Auth check handled by middleware
-        res.json(db.read(SETTINGS_PATH, {}));
+        res.json(settingsService.getAll());
     },
 
     updateAdminSettings: (req, res) => {
-        const oldSettings = db.read(SETTINGS_PATH, {});
-        db.write(SETTINGS_PATH, { ...oldSettings, ...req.body });
-        res.json({ success: true });
+        if (settingsService.updateAll(req.body)) {
+            res.json({ success: true });
+        } else {
+            res.status(500).json({ error: '保存失败' });
+        }
     },
 
     setBackground: (req, res) => {
         const { url } = req.body;
-        const settings = db.read(SETTINGS_PATH, {});
-        settings.backgroundUrl = url || '';
-        db.write(SETTINGS_PATH, settings);
+        settingsService.set('backgroundUrl', url || '');
         res.json({ success: true });
     },
 
@@ -55,13 +47,34 @@ export const systemController = {
             db.ensureDir(UPLOADS_DIR);
             fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
 
-            const settings = db.read(SETTINGS_PATH, {});
-            settings.backgroundUrl = `/uploads/${filename}`;
-            db.write(SETTINGS_PATH, settings);
-            res.json({ success: true, url: settings.backgroundUrl });
+            const url = `/uploads/${filename}`;
+            settingsService.set('backgroundUrl', url);
+            res.json({ success: true, url });
         } catch (err) {
             logger.error('上传失败', err);
             res.status(500).json({ error: '保存失败' });
+        }
+    },
+
+    uploadIcon: (req, res) => {
+        try {
+            const { data } = req.body;
+            const matches = data?.match(/^data:image\/(\w+);base64,(.+)$/);
+            if (!matches) return res.status(400).json({ error: '格式不正确' });
+
+            const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+            const cleanExt = ext.replace('+xml', '');
+
+            const buffer = Buffer.from(matches[2], 'base64');
+            const filename = `icon_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${cleanExt}`;
+
+            db.ensureDir(UPLOADS_DIR);
+            fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+
+            res.json({ success: true, url: `/uploads/${filename}` });
+        } catch (err) {
+            logger.error('图标上传失败', err);
+            res.status(500).json({ error: '上传失败' });
         }
     },
 
@@ -91,7 +104,6 @@ export const systemController = {
         const { filename } = req.params;
         const filePath = path.join(UPLOADS_DIR, filename);
 
-        // 安全检查：防止路径遍历
         if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
             return res.status(400).json({ error: '无效的文件名' });
         }
@@ -99,12 +111,13 @@ export const systemController = {
         try {
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
+
                 // 如果删除的是当前背景图，清除设置
-                const settings = db.read(SETTINGS_PATH, {});
-                if (settings.backgroundUrl === `/uploads/${filename}`) {
-                    settings.backgroundUrl = '';
-                    db.write(SETTINGS_PATH, settings);
+                const currentBg = settingsService.get('backgroundUrl', '');
+                if (currentBg === `/uploads/${filename}`) {
+                    settingsService.set('backgroundUrl', '');
                 }
+
                 logger.info(`文件已删除: ${filename}`);
                 res.json({ success: true });
             } else {

@@ -1,16 +1,23 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import type { SiteConfig } from '@/types';
+import type { SystemSettings, User, ProfileUpdateData } from '@/api';
 
-interface User {
+interface AuthUser {
   login: string;
   name: string;
   level: number;
   avatar_url?: string;
 }
 
+interface AuthResult {
+  success: boolean;
+  error?: string;
+}
+
 export const useAdminStore = defineStore('admin', () => {
   const token = ref<string | null>(localStorage.getItem('admin_token'));
-  const user = ref<User | null>(
+  const user = ref<AuthUser | null>(
     localStorage.getItem('admin_user')
       ? JSON.parse(localStorage.getItem('admin_user')!)
       : null
@@ -18,7 +25,7 @@ export const useAdminStore = defineStore('admin', () => {
   const isAuthenticated = ref<boolean>(!!token.value);
 
   // 设置认证信息
-  const setAuth = (newToken: string, newUser: User) => {
+  const setAuth = (newToken: string, newUser: AuthUser) => {
     token.value = newToken;
     user.value = newUser;
     isAuthenticated.value = true;
@@ -36,7 +43,7 @@ export const useAdminStore = defineStore('admin', () => {
   };
 
   // 登录
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<AuthResult> => {
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
@@ -49,13 +56,14 @@ export const useAdminStore = defineStore('admin', () => {
 
       setAuth(data.token, data.user);
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '登录失败';
+      return { success: false, error: message };
     }
   };
 
   // 注册
-  const register = async (username: string, password: string) => {
+  const register = async (username: string, password: string): Promise<AuthResult> => {
     try {
       const response = await fetch('/api/register', {
         method: 'POST',
@@ -65,8 +73,9 @@ export const useAdminStore = defineStore('admin', () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '注册失败');
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '注册失败';
+      return { success: false, error: message };
     }
   };
 
@@ -74,7 +83,7 @@ export const useAdminStore = defineStore('admin', () => {
   const getFileContent = async (username?: string) => {
     try {
       const targetUser = username || user.value?.login;
-      const headers: any = {};
+      const headers: Record<string, string> = {};
       if (token.value) headers['Authorization'] = `Bearer ${token.value}`;
 
       const url = targetUser ? `/api/data?user=${targetUser}` : '/api/data';
@@ -82,13 +91,14 @@ export const useAdminStore = defineStore('admin', () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '获取文件失败');
       return data;
-    } catch (error: any) {
-      throw new Error(error.message || '获取文件失败');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '获取文件失败';
+      throw new Error(message);
     }
   };
 
   // 更新文件内容
-  const updateFileContent = async (content: any) => {
+  const updateFileContent = async (content: SiteConfig) => {
     if (!token.value) throw new Error('未授权');
 
     try {
@@ -104,13 +114,14 @@ export const useAdminStore = defineStore('admin', () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '更新文件失败');
       return data;
-    } catch (error: any) {
-      throw new Error(error.message || '更新文件失败');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '更新文件失败';
+      throw new Error(message);
     }
   };
 
   // 管理员获取设置
-  const getAdminSettings = async () => {
+  const getAdminSettings = async (): Promise<SystemSettings> => {
     const response = await fetch('/api/admin/settings', {
       headers: { 'Authorization': `Bearer ${token.value}` }
     });
@@ -118,7 +129,7 @@ export const useAdminStore = defineStore('admin', () => {
   };
 
   // 管理员更新设置
-  const updateAdminSettings = async (settings: any) => {
+  const updateAdminSettings = async (settings: Partial<SystemSettings>) => {
     const response = await fetch('/api/admin/settings', {
       method: 'POST',
       headers: {
@@ -131,7 +142,7 @@ export const useAdminStore = defineStore('admin', () => {
   };
 
   // 管理员获取用户列表
-  const fetchUsers = async () => {
+  const fetchUsers = async (): Promise<User[]> => {
     const response = await fetch('/api/admin/users', {
       headers: { 'Authorization': `Bearer ${token.value}` }
     });
@@ -139,7 +150,7 @@ export const useAdminStore = defineStore('admin', () => {
   };
 
   // 管理员添加用户
-  const addUser = async (userData: any) => {
+  const addUser = async (userData: { username: string; password: string; level?: number }) => {
     const response = await fetch('/api/admin/users', {
       method: 'POST',
       headers: {
@@ -161,7 +172,7 @@ export const useAdminStore = defineStore('admin', () => {
   };
 
   // 管理员更新用户 (等级、用户名、密码)
-  const updateUser = async (oldUsername: string, updateData: any) => {
+  const updateUser = async (oldUsername: string, updateData: Partial<User & { password?: string; newUsername?: string }>) => {
     const response = await fetch(`/api/admin/users/${oldUsername}`, {
       method: 'PATCH',
       headers: {
@@ -174,7 +185,7 @@ export const useAdminStore = defineStore('admin', () => {
   };
 
   // 用户修改个人信息/密码/用户名
-  const updateProfile = async (profileData: any) => {
+  const updateProfile = async (profileData: ProfileUpdateData) => {
     const response = await fetch('/api/profile', {
       method: 'PATCH',
       headers: {
@@ -210,4 +221,3 @@ export const useAdminStore = defineStore('admin', () => {
     updateProfile
   };
 });
-

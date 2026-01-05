@@ -21,7 +21,6 @@
         :is-mobile="isMobile" 
         :current-view-label="currentViewLabel" 
         :loading="loading"
-        :saving="saving"
         @open-sidebar="sidebarVisible = true"
         @go-home="goToIndex"
         @load-data="loadData"
@@ -37,11 +36,9 @@
           @update:search-keyword="searchKeyword = $event"
           :filter-category="filterCategory"
           @update:filter-category="filterCategory = $event"
-          :saving="saving"
           :categories="categories"
           :items="items"
           :filtered-items="filteredItems"
-          @save="handleSave"
           @add-category="handleAddCategory"
           @edit-category="handleEditCategory"
           @delete-category="handleDeleteCategory"
@@ -119,7 +116,6 @@
       v-model="categoryDialogVisible" 
       v-model:form="categoryForm" 
       :is-edit="isEdit" 
-      :saving="saving" 
       @save="saveCategory" 
     />
     <SiteDialog 
@@ -127,7 +123,6 @@
       v-model:form="itemForm" 
       :categories="categories" 
       :is-edit="isEdit" 
-      :saving="saving" 
       @save="saveItem" 
     />
     <BookmarkImport v-model="showBookmarkImport" @import="handleBookmarkImport" />
@@ -139,13 +134,14 @@ import { ref, onMounted, onUnmounted, computed, defineAsyncComponent } from 'vue
 import { useRouter } from 'vue-router';
 import { useAdminStore } from '@/store/admin';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { DataAnalysis, User, Setting, UserFilled, List, Lock, TrendCharts, Delete } from '@element-plus/icons-vue';
+import { DataAnalysis, User as UserIcon, Setting, UserFilled, List, Lock, TrendCharts, Delete } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
 
 // Store
 import { useDataStore } from '@/store/data';
 import { storeToRefs } from 'pinia';
-import { Category, Item } from '@/types';
+import { Category, Item, ImportedBookmarkItem } from '@/types';
+import type { User as ApiUser, SystemSettings, ProfileUpdateData } from '@/api';
 
 // Components (Lazy Load for performance)
 import AdminHeader from '@/components/admin/AdminHeader.vue';
@@ -168,8 +164,8 @@ const router = useRouter();
 const adminStore = useAdminStore();
 const currentView = ref('profile');
 const sidebarVisible = ref(false);
-const users = ref([]);
-const systemSettings = ref({});
+const users = ref<ApiUser[]>([]);
+const systemSettings = ref<Partial<SystemSettings>>({});
 const showBookmarkImport = ref(false);
 
 const menuItems = computed(() => {
@@ -180,7 +176,7 @@ const menuItems = computed(() => {
   ];
   if (adminStore.user?.level === 3) {
     items.push(
-      { id: 'users', label: t('menu.users'), icon: User },
+      { id: 'users', label: t('menu.users'), icon: UserIcon },
       { id: 'stats', label: t('menu.stats'), icon: TrendCharts },
       { id: 'audit', label: t('menu.audit'), icon: List },
       { id: 'recycle', label: t('menu.recycle'), icon: Delete },
@@ -195,12 +191,7 @@ const currentViewLabel = computed(() => {
 });
 
 const dataStore = useDataStore();
-const { categories, items, loading, saving } = storeToRefs(dataStore);
-
-// 兼容 DataManager @save 事件
-const handleSave = async () => {
-    await dataStore.loadData();
-};
+const { categories, items, loading } = storeToRefs(dataStore);
 
 // Local State for Dialogs
 const categoryDialogVisible = ref(false);
@@ -328,8 +319,9 @@ const handleBatchMove = async (ids: number[], categoryId: number) => {
 
 // 兼容导入逻辑中对 reload 的需求
 const saveDataSync = async () => {
-    // Store 的 action 每一步都会 sync，这里可以调用 loadData 确保一致，或者直接不做
-    // 为了兼容旧逻辑（导入后刷新），我们重新 load
+    // 关键修正：必须先保存本地变更到服务器，而不是重新加载（否则会丢数据）
+    // @ts-ignore
+    await dataStore.saveData('数据导入/清理');
     await dataStore.loadData();
 };
 
@@ -369,7 +361,7 @@ const handleUpdateUserLevel = async (username: string, level: number) => {
   }
 };
 
-const handleAddUser = async (userData: any) => {
+const handleAddUser = async (userData: { username: string; password: string; level?: number }) => {
   const res = await adminStore.addUser(userData);
   if (res.success) {
     ElMessage.success(t('admin.addSuccess'));
@@ -389,7 +381,7 @@ const handleDeleteUser = async (username: string) => {
   }
 };
 
-const handleUpdateUser = async (oldUsername: string, updateData: any) => {
+const handleUpdateUser = async (oldUsername: string, updateData: Partial<ApiUser & { password?: string; newUsername?: string }>) => {
   const res = await adminStore.updateUser(oldUsername, updateData);
   if (res.success) {
     ElMessage.success(t('admin.updateSuccess'));
@@ -399,12 +391,12 @@ const handleUpdateUser = async (oldUsername: string, updateData: any) => {
   }
 };
 
-const handleSaveSettings = async (newSettings: any) => {
+const handleSaveSettings = async (newSettings: Partial<SystemSettings>) => {
   const res = await adminStore.updateAdminSettings(newSettings);
   if (res.success) ElMessage.success(t('settings.saveSettings') + ' ' + t('common.success'));
 };
 
-const handleUpdateProfile = async (profileData: any) => {
+const handleUpdateProfile = async (profileData: ProfileUpdateData) => {
   try {
     const res = await adminStore.updateProfile(profileData);
     if (res.success) {
@@ -413,8 +405,9 @@ const handleUpdateProfile = async (profileData: any) => {
       const errorMsg = res.error === 'ERR_PASSWORD_WEAK' ? t('auth.passwordWeak') : (res.error || t('common.operationFailed'));
       ElMessage.error(errorMsg);
     }
-  } catch (e: any) {
-    ElMessage.error(e.message || t('common.operationFailed'));
+  } catch (e) {
+    const message = e instanceof Error ? e.message : t('common.operationFailed');
+    ElMessage.error(message);
   }
 };
 
@@ -430,21 +423,21 @@ onMounted(() => {
 });
 onUnmounted(() => window.removeEventListener('resize', checkMobile));
 
-const handleJsonImport = (content: any) => {
+const handleJsonImport = (content: { categories: Category[]; items: Item[] }) => {
   if (!content.categories || !content.items) {
     ElMessage.error(t('admin.jsonError'));
     return;
   }
   
-  let maxCatId = categories.value.reduce((max: number, cat: any) => Math.max(max, cat.id), 0);
-  let maxItemId = items.value.reduce((max: number, item: any) => Math.max(max, item.id), 0);
+  let maxCatId = categories.value.reduce((max, cat) => Math.max(max, cat.id), 0);
+  let maxItemId = items.value.reduce((max, item) => Math.max(max, item.id), 0);
   
   const catMapping: Record<number, number> = {};
   const currentCatNames: Record<string, number> = {};
-  categories.value.forEach((cat: any) => { currentCatNames[cat.name] = cat.id; });
+  categories.value.forEach(cat => { currentCatNames[cat.name] = cat.id; });
   
   // 1. 合并分类
-  content.categories.forEach((cat: any) => {
+  content.categories.forEach(cat => {
     if (currentCatNames[cat.name]) {
       catMapping[cat.id] = currentCatNames[cat.name];
     } else {
@@ -458,8 +451,8 @@ const handleJsonImport = (content: any) => {
   
   // 2. 合并网站 (按 URL 去重)
   let addedCount = 0;
-  content.items.forEach((item: any) => {
-    const exists = items.value.some((i: any) => i.url === item.url);
+  content.items.forEach(item => {
+    const exists = items.value.some(i => i.url === item.url);
     if (!exists) {
       maxItemId++;
       const newItem = { 
@@ -477,12 +470,12 @@ const handleJsonImport = (content: any) => {
 };
 
 // 浏览器书签导入处理
-const handleBookmarkImport = (data: { categories: string[]; items: any[] }) => {
-  let maxCatId = categories.value.reduce((max: number, cat: any) => Math.max(max, cat.id), 0);
-  let maxItemId = items.value.reduce((max: number, item: any) => Math.max(max, item.id), 0);
+const handleBookmarkImport = (data: { categories: string[]; items: ImportedBookmarkItem[] }) => {
+  let maxCatId = categories.value.reduce((max, cat) => Math.max(max, cat.id), 0);
+  let maxItemId = items.value.reduce((max, item) => Math.max(max, item.id), 0);
   
   const catNameToId: Record<string, number> = {};
-  categories.value.forEach((cat: any) => { catNameToId[cat.name] = cat.id; });
+  categories.value.forEach(cat => { catNameToId[cat.name] = cat.id; });
   
   data.categories.forEach(catName => {
     if (!catNameToId[catName]) {
@@ -492,8 +485,8 @@ const handleBookmarkImport = (data: { categories: string[]; items: any[] }) => {
     }
   });
   
-  data.items.forEach((item: any) => {
-    const exists = items.value.some((i: any) => i.url === item.url);
+  data.items.forEach(item => {
+    const exists = items.value.some(i => i.url === item.url);
     if (!exists) {
       maxItemId++;
       items.value.push({

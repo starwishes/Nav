@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { Category, Item } from '@/types';
+import { Category, Item, SiteConfig } from '@/types';
 import { dataApi } from '@/api';
 import { ElMessage } from 'element-plus';
 
@@ -74,9 +74,10 @@ export const useDataStore = defineStore('data', () => {
 
                 initialized.value = true;
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to load data', error);
-            ElMessage.error('加载失败: ' + error.message);
+            const message = error instanceof Error ? error.message : '加载失败';
+            ElMessage.error('加载失败: ' + message);
         } finally {
             loading.value = false;
         }
@@ -86,16 +87,15 @@ export const useDataStore = defineStore('data', () => {
     const sync = async (action?: string) => {
         saving.value = true;
         try {
-            const payload: any = {
+            const payload: SiteConfig & { action?: string } = {
                 categories: categories.value,
                 items: items.value
             };
             if (action) payload.action = action;
             await dataApi.saveContent(payload);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Sync failed', error);
-            // Show detailed error message if available
-            const msg = error.message || '保存失败';
+            const msg = error instanceof Error ? error.message : '保存失败';
             ElMessage.error(msg);
             throw error;
         } finally {
@@ -139,10 +139,10 @@ export const useDataStore = defineStore('data', () => {
     const deleteCategory = async (id: number) => {
         const originalCats = [...categories.value];
         const originalItems = [...items.value];
-        
+
         categories.value = categories.value.filter(c => c.id !== id);
         items.value = items.value.map(i => i.categoryId === id ? { ...i, categoryId: 0 } : i);
-        
+
         try {
             await sync(`删除分类: ID ${id}`);
         } catch (e) {
@@ -155,12 +155,12 @@ export const useDataStore = defineStore('data', () => {
     const moveCategory = async (fromIndex: number, toIndex: number) => {
         if (toIndex < 0 || toIndex >= categories.value.length) return;
         const originalCats = [...categories.value];
-        
+
         const arr = [...categories.value];
         const [moved] = arr.splice(fromIndex, 1);
         arr.splice(toIndex, 0, moved);
         categories.value = arr;
-        
+
         try {
             await sync(`移动分类: ${moved.name}`);
         } catch (e) {
@@ -184,7 +184,7 @@ export const useDataStore = defineStore('data', () => {
             tags: itemData.tags || []
         };
         items.value.push(newItem);
-        
+
         try {
             await sync(`添加书签: ${newItem.name}`);
         } catch (e) {
@@ -198,7 +198,7 @@ export const useDataStore = defineStore('data', () => {
         const idx = items.value.findIndex(i => i.id === itemData.id);
         if (idx > -1) {
             const original = { ...items.value[idx] };
-            
+
             const updatedItem = {
                 ...items.value[idx],
                 ...itemData,
@@ -210,7 +210,7 @@ export const useDataStore = defineStore('data', () => {
             }
 
             items.value[idx] = updatedItem;
-            
+
             try {
                 await sync(`更新书签: ${updatedItem.name}`);
             } catch (e) {
@@ -224,7 +224,7 @@ export const useDataStore = defineStore('data', () => {
         const originalItems = [...items.value];
         const item = items.value.find(i => i.id === id);
         items.value = items.value.filter(i => i.id !== id);
-        
+
         try {
             await sync(`删除书签: ${item?.name || id}`);
         } catch (e) {
@@ -236,7 +236,7 @@ export const useDataStore = defineStore('data', () => {
     const batchDeleteItems = async (ids: number[]) => {
         const originalItems = [...items.value];
         items.value = items.value.filter(i => !ids.includes(i.id));
-        
+
         try {
             await sync(`批量删除书签: ${ids.length}个`);
         } catch (e) {
@@ -248,7 +248,7 @@ export const useDataStore = defineStore('data', () => {
     const batchMoveItems = async (ids: number[], targetCatId: number) => {
         const originalItems = [...items.value];
         items.value = items.value.map(i => ids.includes(i.id) ? { ...i, categoryId: Number(targetCatId) } : i);
-        
+
         try {
             await sync(`批量移动书签: ${ids.length}个`);
         } catch (e) {
@@ -335,6 +335,7 @@ export const useDataStore = defineStore('data', () => {
         batchDeleteItems,
         batchMoveItems,
         moveItem,
-        findDuplicateItem
+        findDuplicateItem,
+        saveData: sync
     };
 });

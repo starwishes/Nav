@@ -20,6 +20,15 @@ export default defineConfig(({ mode }) => {
         algorithm: 'gzip', // 压缩算法，可选 ['gzip', 'brotliCompress', 'deflate', 'deflateRaw']
         ext: '.gz', // 生成的压缩包后缀
         deleteOriginFile: false // 压缩后是否删除源文件
+      }),
+      // 生产环境开启 brotli 压缩
+      viteCompression({
+        verbose: true,
+        disable: false,
+        threshold: 10240,
+        algorithm: 'brotliCompress',
+        ext: '.br',
+        deleteOriginFile: false
       })
     ],
     define: {
@@ -48,7 +57,7 @@ export default defineConfig(({ mode }) => {
       // 本地开发代理配置
       proxy: {
         '/api': {
-          target: 'http://localhost:3000',
+          target: 'http://localhost:3333',
           changeOrigin: true,
           // 既然后端就是 server.js 提供的 /api，这里不需要 rewrite
         }

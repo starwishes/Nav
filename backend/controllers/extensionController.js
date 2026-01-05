@@ -90,46 +90,40 @@ export const extensionController = {
                 archive.file(optionsJsPath, { name: 'options/options.js' });
             }
 
-            // 生成预配置的 config.js 文件
+            // 生成预配置的 config.js 文件（直接写入 storage）
             const configContent = `// StarNav Extension - Auto-generated Configuration
-// 此文件由服务器自动生成，包含预配置信息
-window.STARNAV_CONFIG = {
-    serverUrl: "${serverUrl}",
-    token: "${token}",
-    user: ${JSON.stringify({ login: user?.username || user?.login || 'user' })}
-};
+// 此文件由服务器自动生成，会在加载时自动写入 storage
+(function() {
+    const config = {
+        serverUrl: "${serverUrl}",
+        token: "${token}",
+        user: ${JSON.stringify({ login: user?.username || user?.login || 'user' })}
+    };
+    // 同时写入 sync 和 local storage
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.sync.set({ serverUrl: config.serverUrl });
+        chrome.storage.local.set({ token: config.token, user: config.user });
+    }
+    // 备份到 window 供调试
+    window.STARNAV_CONFIG = config;
+})();
 `;
             archive.append(configContent, { name: 'config.js' });
 
-            // 生成修改后的 popup.js (在头部注入配置加载)
+            // popup.js 直接使用原始文件（不注入额外代码，让用户通过 options 页面登录）
             const popupJsPath = path.join(EXTENSION_DIR, 'popup', 'popup.js');
             if (fs.existsSync(popupJsPath)) {
-                let popupContent = fs.readFileSync(popupJsPath, 'utf-8');
-                // 在文件开头注入配置加载逻辑
-                const configLoader = `
-// 自动加载预配置
-(async function loadPreConfig() {
-    if (typeof window.STARNAV_CONFIG !== 'undefined') {
-        await chrome.storage.sync.set({
-            serverUrl: window.STARNAV_CONFIG.serverUrl,
-            token: window.STARNAV_CONFIG.token,
-            user: window.STARNAV_CONFIG.user
-        });
-    }
-})();
-`;
-                popupContent = configLoader + popupContent;
-                archive.append(popupContent, { name: 'popup/popup.js' });
+                archive.file(popupJsPath, { name: 'popup/popup.js' });
             }
 
             // 修改 popup.html 引入 config.js
             const popupHtmlPath = path.join(EXTENSION_DIR, 'popup', 'popup.html');
             if (fs.existsSync(popupHtmlPath)) {
                 let htmlContent = fs.readFileSync(popupHtmlPath, 'utf-8');
-                // 在 popup.js 之前引入 config.js
+                // 在 popup.js 之前引入 config.js（需要匹配 type="module" 属性）
                 htmlContent = htmlContent.replace(
-                    '<script src="popup.js"></script>',
-                    '<script src="../config.js"></script>\n  <script src="popup.js"></script>'
+                    /<script\s+type="module"\s+src="popup\.js"><\/script>/,
+                    '<script src="../config.js"></script>\n  <script type="module" src="popup.js"></script>'
                 );
                 archive.append(htmlContent, { name: 'popup/popup.html' });
             }

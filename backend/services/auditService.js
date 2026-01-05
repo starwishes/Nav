@@ -1,59 +1,78 @@
-import path from 'path';
-import { db } from './db.js';
-import { DATA_DIR } from '../config/index.js';
+import { getDb } from './database.js';
+import { logger } from './db.js';
 
-const LOG_FILE = path.join(DATA_DIR, 'audit.json');
-
+/**
+ * 审计日志服务 (SQLite 版本)
+ */
 export const auditService = {
-    // 获取日志 (支持分页)
+    /**
+     * 获取日志 (支持分页)
+     */
     getLogs(page = 1, limit = 50) {
-        const logs = db.read(LOG_FILE, []);
-        // 按时间倒序
-        const sorted = logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const db = getDb();
+        const offset = (page - 1) * limit;
 
-        const start = (page - 1) * limit;
-        const end = start + limit;
+        const total = db.prepare('SELECT COUNT(*) as count FROM audit_logs').get().count;
+        const logs = db.prepare(`
+            SELECT id, username, action, details, ip, created_at as timestamp
+            FROM audit_logs 
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        `).all(limit, offset);
 
-        return {
-            total: sorted.length,
-            logs: sorted.slice(start, end)
-        };
+        return { total, logs };
     },
 
-    // 记录日志
+    /**
+     * 记录日志
+     */
     log(action, data = {}) {
-        const logs = db.read(LOG_FILE, []);
+        try {
+            const db = getDb();
+            const {
+                username = 'anonymous',
+                ip = 'unknown',
+                userAgent = 'unknown',
+                success = true,
+                details = ''
+            } = data;
 
-        const {
-            username = 'anonymous',
-            ip = 'unknown',
-            userAgent = 'unknown',
-            success = true,
-            details = ''
-        } = data;
+            const detailsJson = JSON.stringify({
+                success,
+                userAgent,
+                message: details
+            });
 
-        const entry = {
-            id: Date.now(),
-            action,
-            username,
-            ip,
-            userAgent,
-            success,
-            details,
-            timestamp: new Date().toISOString()
-        };
+            db.prepare(`
+                INSERT INTO audit_logs (username, action, details, ip)
+                VALUES (?, ?, ?, ?)
+            `).run(username, action, detailsJson, ip);
 
-        // 限制日志总数 (保留最近 2000 条)
-        if (logs.length >= 2000) {
-            logs.splice(0, logs.length - 1999);
+            // 自动清理旧日志 (保留最近 2000 条)
+            const count = db.prepare('SELECT COUNT(*) as count FROM audit_logs').get().count;
+            if (count > 2000) {
+                db.prepare(`
+                    DELETE FROM audit_logs WHERE id IN (
+                        SELECT id FROM audit_logs ORDER BY created_at ASC LIMIT ?
+                    )
+                `).run(count - 2000);
+            }
+        } catch (err) {
+            logger.error('记录审计日志失败', err);
         }
-
-        logs.push(entry);
-        db.write(LOG_FILE, logs);
     },
 
-    // 清空日志
+    /**
+     * 清空日志
+     */
     clear() {
-        return db.write(LOG_FILE, []);
+        try {
+            const db = getDb();
+            db.prepare('DELETE FROM audit_logs').run();
+            return true;
+        } catch (err) {
+            logger.error('清空审计日志失败', err);
+            return false;
+        }
     }
 };

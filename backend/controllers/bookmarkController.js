@@ -86,6 +86,9 @@ export const bookmarkController = {
         const username = req.user?.username || DEFAULT_ADMIN_NAME;
         const { name, icon, minLevel } = req.body;
 
+        // 调试日志
+        logger.info(`[createCategory] 用户: ${username}, 分类名: ${name}, req.user: ${JSON.stringify(req.user)}`);
+
         if (!name || typeof name !== 'string' || !name.trim()) {
             return errorResponse(res, '分类名称不能为空', 400);
         }
@@ -95,6 +98,8 @@ export const bookmarkController = {
             icon: icon || '',
             minLevel: minLevel || 0
         });
+
+        logger.info(`[createCategory] 创建结果: ${JSON.stringify(newCategory)}`);
 
         return successResponse(res, { category: newCategory });
     },

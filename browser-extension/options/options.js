@@ -40,11 +40,16 @@ async function init() {
     }
 
     // Load saved config
-    const stored = await getFullStorage(['serverUrl', 'token', 'user']);
+    const stored = await getFullStorage(['serverUrl', 'token', 'user', 'savedUsername']);
     console.log('[StarNav] Storage 配置已载入');
 
     if (stored.serverUrl) {
         elements.serverUrl.value = stored.serverUrl;
+    }
+
+    // 自动填充保存的用户名
+    if (stored.savedUsername) {
+        elements.username.value = stored.savedUsername;
     }
 
     if (stored.token) {
@@ -52,6 +57,10 @@ async function init() {
         const username = stored.user?.login || stored.user?.name || '用户';
         updateStatus(true, `已连接 (${username})`);
         updateButtonState();
+        // 已连接时也填充用户名
+        if (stored.user?.login) {
+            elements.username.value = stored.user.login;
+        }
     }
 
     setupEventListeners();
@@ -195,8 +204,8 @@ async function saveAndConnect() {
             showToast('警告：非 HTTPS 连接可能存在安全风险', 'error');
         }
 
-        // Save to storage (Token 存本地 local)
-        await setStorage({ serverUrl }, 'sync');
+        // Save to storage (Token 存本地 local, 用户名存 sync 便于自动填充)
+        await setStorage({ serverUrl, savedUsername: username }, 'sync');
         await setStorage({
             token: result.token,
             user: result.user
@@ -205,7 +214,7 @@ async function saveAndConnect() {
         updateStatus(true, `已连接 (${result.user?.login || username})`);
         showToast('连接成功！', 'success');
 
-        // Clear password field
+        // 仅清除密码输入框（保留用户名）
         elements.password.value = '';
     } catch (error) {
         updateStatus(false, '连接失败');

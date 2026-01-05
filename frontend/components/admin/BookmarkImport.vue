@@ -96,6 +96,7 @@
 import { ref, computed, watch } from 'vue';
 import { Upload } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import { ImportedBookmarkItem } from '@/types';
 
 interface BookmarkItem {
   name: string;
@@ -115,7 +116,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
-  (e: 'import', data: { categories: string[]; items: BookmarkItem[] }): void;
+  (e: 'import', data: { categories: string[]; items: ImportedBookmarkItem[] }): void;
 }>();
 
 const visible = computed({

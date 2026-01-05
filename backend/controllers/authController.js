@@ -5,8 +5,8 @@ import { sessionService } from '../services/sessionService.js';
 import { auditService } from '../services/auditService.js';
 import { loginSchema, strongPasswordSchema } from '../middleware/validation.js';
 import { JWT_SECRET } from '../config/index.js';
-import { db, logger } from '../services/db.js';
-import { SETTINGS_PATH } from '../config/index.js';
+import { logger } from '../services/db.js';
+import { settingsService } from '../services/settingsService.js';
 
 // 获取客户端 IP
 const getClientIP = (req) => {
@@ -62,8 +62,8 @@ export const authController = {
     },
 
     register: (req, res) => {
-        const settings = db.read(SETTINGS_PATH, {});
-        if (!settings.registrationEnabled) return res.status(403).json({ error: '注册功能已关闭' });
+        const registrationEnabled = settingsService.get('registrationEnabled', false);
+        if (!registrationEnabled) return res.status(403).json({ error: '注册功能已关闭' });
 
         const { error } = strongPasswordSchema.validate(req.body);
         if (error) return res.status(400).json({ error: error.details[0].message });

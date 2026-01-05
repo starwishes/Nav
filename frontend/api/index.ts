@@ -1,5 +1,39 @@
 import { api, ApiResponse } from './client';
-import { SiteConfig } from '@/types';
+import { SiteConfig, Item } from '@/types';
+
+// API 响应类型定义
+export interface LoginResponse {
+    token: string;
+    user: { login: string; name: string; level: number };
+    sessionId: string;
+}
+
+export interface ProfileResponse {
+    username: string;
+    level: number;
+}
+
+export interface User {
+    username: string;
+    level: number;
+    createdAt?: string;
+    lastLogin?: string;
+}
+
+export interface SystemSettings {
+    registrationEnabled?: boolean;
+    backgroundUrl?: string;
+    timezone?: string;
+    homeUrl?: string;
+    footerHtml?: string;
+    siteName?: string;
+    defaultUserLevel?: number;
+}
+
+export interface ProfileUpdateData {
+    username?: string;
+    password?: string;
+}
 
 // 数据相关 API
 export const dataApi = {
@@ -14,33 +48,35 @@ export const dataApi = {
         return api.post<ApiResponse>('/data', content);
     },
 
-    // 记录点击 (不做强类型检查，因为返回值可能只是 success)
+    // 记录点击
     trackClick: (itemId: number, username: string) => {
-        return api.post(`/sites/${itemId}/click?user=${username}`, {});
+        return api.post<ApiResponse<Item>>(`/sites/${itemId}/click?user=${username}`, {});
     }
 };
 
 // 认证相关 API
 export const authApi = {
     login: (credentials: { username: string; password: string }) => {
-        return api.post<ApiResponse<any>>('/login', credentials);
+        return api.post<ApiResponse<LoginResponse>>('/login', credentials);
     },
 
     register: (credentials: { username: string; password: string }) => {
-        return api.post<ApiResponse<any>>('/register', credentials);
+        return api.post<ApiResponse>('/register', credentials);
     },
 
-    updateProfile: (profile: any) => {
-        return api.patch<ApiResponse<any>>('/profile', profile);
+    updateProfile: (profile: ProfileUpdateData) => {
+        return api.patch<ApiResponse<LoginResponse>>('/profile', profile);
     },
 
     // 管理员接口
     admin: {
-        getSettings: () => api.get<any>('/admin/settings'),
-        updateSettings: (settings: any) => api.post<any>('/admin/settings', settings),
-        getUsers: () => api.get<any[]>('/admin/users'),
-        addUser: (user: any) => api.post<any>('/admin/users', user),
-        deleteUser: (username: string) => api.del<any>(`/admin/users/${username}`),
-        updateUser: (username: string, data: any) => api.patch<any>(`/admin/users/${username}`, data),
+        getSettings: () => api.get<SystemSettings>('/admin/settings'),
+        updateSettings: (settings: Partial<SystemSettings>) => api.post<ApiResponse>('/admin/settings', settings),
+        getUsers: () => api.get<User[]>('/admin/users'),
+        addUser: (user: { username: string; password: string; level?: number }) => api.post<ApiResponse>('/admin/users', user),
+        deleteUser: (username: string) => api.del<ApiResponse>(`/admin/users/${username}`),
+        updateUser: (username: string, data: Partial<User & { password?: string; newUsername?: string }>) =>
+            api.patch<ApiResponse>(`/admin/users/${username}`, data),
     }
 };
+

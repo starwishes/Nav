@@ -1,11 +1,8 @@
-import { db, logger } from './db.js';
-import { getUserDataPath, DATA_DIR } from '../config/index.js';
-import path from 'path';
-
-const TRASH_FILE = path.join(DATA_DIR, 'trash.json');
+import { getDb } from './database.js';
+import { logger } from './db.js';
 
 /**
- * 回收站服务 (Soft Delete)
+ * 回收站服务 (SQLite 版本)
  */
 export const recycleService = {
     /**
@@ -16,13 +13,16 @@ export const recycleService = {
      */
     moveToTrash: (username, item) => {
         try {
-            const trash = db.read(TRASH_FILE, []);
-            trash.push({
+            const db = getDb();
+            const data = JSON.stringify({
                 ...item,
-                deletedAt: new Date().toISOString(),
                 deletedBy: username
             });
-            db.write(TRASH_FILE, trash);
+
+            db.prepare(`
+                INSERT INTO recycle_bin (type, data) VALUES ('item', ?)
+            `).run(data);
+
             logger.info(`书签移入回收站: ${item.name}`);
             return true;
         } catch (err) {
@@ -36,40 +36,69 @@ export const recycleService = {
      * @returns {Array}
      */
     getTrash: () => {
-        return db.read(TRASH_FILE, []);
+        try {
+            const db = getDb();
+            const rows = db.prepare(`
+                SELECT id, type, data, deleted_at as deletedAt FROM recycle_bin 
+                ORDER BY deleted_at DESC
+            `).all();
+
+            return rows.map(row => ({
+                recycleId: row.id,
+                ...JSON.parse(row.data),
+                deletedAt: row.deletedAt
+            }));
+        } catch (err) {
+            logger.error('获取回收站失败', err);
+            return [];
+        }
     },
 
     /**
      * 从回收站恢复书签
-     * @param {number} itemId - 书签ID
-     * @param {string} username - 恢复到的用户数据
+     * @param {number} recycleId - 回收站记录ID
      * @returns {object|null} 恢复的书签或null
      */
-    restore: (itemId, username) => {
-        try {
-            const trash = db.read(TRASH_FILE, []);
-            const index = trash.findIndex(i => i.id === itemId);
-            if (index === -1) return null;
+    restore: (recycleId) => {
+        const db = getDb();
 
-            const [item] = trash.splice(index, 1);
-            delete item.deletedAt;
+        try {
+            // 获取回收站记录
+            const row = db.prepare('SELECT * FROM recycle_bin WHERE id = ?').get(recycleId);
+            if (!row) return null;
+
+            const item = JSON.parse(row.data);
             delete item.deletedBy;
 
-            // 回写回收站
-            db.write(TRASH_FILE, trash);
-
-            // 恢复到用户数据
-            const dataPath = getUserDataPath(username);
-            const userData = db.read(dataPath, { categories: [], items: [] });
-
-            // 确保ID不冲突
-            const maxId = userData.items.reduce((max, i) => Math.max(max, i.id || 0), 0);
-            if (userData.items.some(i => i.id === item.id)) {
+            // 获取新 ID (避免冲突)
+            const maxId = db.prepare('SELECT MAX(id) as maxId FROM items').get().maxId || 0;
+            const existingItem = db.prepare('SELECT id FROM items WHERE id = ?').get(item.id);
+            if (existingItem) {
                 item.id = maxId + 1;
             }
 
-            userData.items.push(item);
-            db.write(dataPath, userData);
+            // 恢复到 items 表
+            const sortOrder = db.prepare('SELECT COUNT(*) as count FROM items').get().count;
+            db.prepare(`
+                INSERT INTO items (id, name, url, description, icon, category_id, pinned, level, tags, click_count, last_visited, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                item.id,
+                item.name || '',
+                item.url || '',
+                item.description || '',
+                item.icon || '',
+                Number(item.categoryId),
+                item.pinned ? 1 : 0,
+                Number(item.level || 0),
+                JSON.stringify(item.tags || []),
+                Number(item.clickCount || 0),
+                item.lastVisited || null,
+                sortOrder
+            );
+
+            // 从回收站删除
+            db.prepare('DELETE FROM recycle_bin WHERE id = ?').run(recycleId);
 
             logger.info(`书签已恢复: ${item.name}`);
             return item;
@@ -80,20 +109,20 @@ export const recycleService = {
     },
 
     /**
-     * 永久删除回收站中的单个书签
-     * @param {number} itemId - 书签ID
+     * 永久删除回收站中的单个记录
+     * @param {number} recycleId - 回收站记录ID
      * @returns {boolean}
      */
-    permanentDelete: (itemId) => {
+    permanentDelete: (recycleId) => {
         try {
-            const trash = db.read(TRASH_FILE, []);
-            const index = trash.findIndex(i => i.id === itemId);
-            if (index === -1) return false;
+            const db = getDb();
+            const result = db.prepare('DELETE FROM recycle_bin WHERE id = ?').run(recycleId);
 
-            trash.splice(index, 1);
-            db.write(TRASH_FILE, trash);
-            logger.info(`书签永久删除: ID ${itemId}`);
-            return true;
+            if (result.changes > 0) {
+                logger.info(`书签永久删除: ID ${recycleId}`);
+                return true;
+            }
+            return false;
         } catch (err) {
             logger.error('永久删除失败', err);
             return false;
@@ -106,7 +135,8 @@ export const recycleService = {
      */
     emptyTrash: () => {
         try {
-            db.write(TRASH_FILE, []);
+            const db = getDb();
+            db.prepare('DELETE FROM recycle_bin').run();
             logger.info('回收站已清空');
             return true;
         } catch (err) {

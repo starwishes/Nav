@@ -17,6 +17,7 @@ export interface Item {
     clickCount?: number;      // 访问次数统计
     lastVisited?: string;     // 最后访问时间
     tags?: string[];          // 标签
+    icon?: string;            // 自定义图标 URL
 }
 
 
@@ -24,3 +25,11 @@ export interface SiteConfig {
     categories: Category[];
     items: Item[];
 }
+
+export interface ImportedBookmarkItem {
+    name: string;
+    url: string;
+    description: string;
+    categoryName: string;
+}
+

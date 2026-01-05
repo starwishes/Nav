@@ -31,7 +31,7 @@
 
     <template #footer>
       <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" @click="handleSave" :loading="saving">{{ t('common.confirm') }}</el-button>
+      <el-button type="primary" @click="handleSave">{{ t('common.confirm') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -47,7 +47,6 @@ const props = defineProps<{
   modelValue: boolean;
   form: Partial<Category>;
   isEdit: boolean;
-  saving?: boolean;
 }>();
 
 const emit = defineEmits<{

@@ -1,84 +1,150 @@
 import bcrypt from 'bcryptjs';
-import { db } from './db.js';
-import { ACCOUNTS_PATH, SETTINGS_PATH, getUserDataPath } from '../config/index.js';
+import { getDb } from './database.js';
 import { logger } from './db.js';
-import fs from 'fs';
 import { USER_LEVEL } from '../../common/constants.js';
 
 /**
- * 账户管理服务
+ * 账户管理服务 (SQLite 版本)
  */
 class AccountService {
-    constructor() {
-        this.accounts = [];
-        this.load();
-    }
-
-    load() {
-        this.accounts = db.read(ACCOUNTS_PATH, []);
-    }
-
-    save() {
-        db.write(ACCOUNTS_PATH, this.accounts);
-    }
-
+    /**
+     * 获取所有用户（不含密码）
+     */
     getAll() {
-        return this.accounts.map(({ password, ...u }) => u);
+        const db = getDb();
+        const users = db.prepare(`
+            SELECT username, level, created_at as createdAt, last_login as lastLogin
+            FROM users
+            ORDER BY created_at DESC
+        `).all();
+        return users;
     }
 
+    /**
+     * 根据用户名查找用户
+     */
     findByUsername(username) {
-        return this.accounts.find(u => u.username === username);
+        const db = getDb();
+        const user = db.prepare(`
+            SELECT username, password, level, created_at as createdAt, last_login as lastLogin
+            FROM users WHERE username = ?
+        `).get(username);
+        return user || null;
     }
 
+    /**
+     * 创建用户
+     */
     create(username, password, level) {
-        const settings = db.read(SETTINGS_PATH, {});
+        const db = getDb();
         const hashedPassword = bcrypt.hashSync(password, 10);
-        const newUser = {
-            username,
-            password: hashedPassword,
-            level: level || settings.defaultUserLevel || USER_LEVEL.USER,
-            createdAt: new Date().toISOString()
-        };
-        this.accounts.push(newUser);
-        this.save();
-        return newUser;
-    }
 
-    update(oldUsername, { newUsername, password, level }) {
-        const index = this.accounts.findIndex(u => u.username === oldUsername);
-        if (index === -1) return null;
+        // 获取默认用户级别
+        const settingRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('defaultUserLevel');
+        const defaultLevel = settingRow ? JSON.parse(settingRow.value) : USER_LEVEL.USER;
 
-        const user = this.accounts[index];
-        if (level !== undefined) user.level = level;
-        if (password) user.password = bcrypt.hashSync(password, 10);
+        try {
+            db.prepare(`
+                INSERT INTO users (username, password, level, created_at)
+                VALUES (?, ?, ?, datetime('now'))
+            `).run(username, hashedPassword, level || defaultLevel);
 
-        if (newUsername && newUsername !== oldUsername) {
-            if (this.findByUsername(newUsername)) return { error: '用户名已占用' };
-
-            const oldPath = getUserDataPath(oldUsername);
-            const newPath = getUserDataPath(newUsername);
-            if (fs.existsSync(oldPath)) {
-                fs.renameSync(oldPath, newPath);
+            logger.info(`用户创建成功: ${username}`);
+            return this.findByUsername(username);
+        } catch (err) {
+            if (err.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
+                logger.warn(`用户已存在: ${username}`);
+                return null;
             }
-            user.username = newUsername;
+            logger.error('用户创建失败', err);
+            return null;
         }
-
-        this.save();
-        return user;
     }
 
-    delete(username) {
-        const index = this.accounts.findIndex(u => u.username === username);
-        if (index === -1) return false;
+    /**
+     * 更新用户
+     */
+    update(oldUsername, { newUsername, password, level }) {
+        const db = getDb();
+        const user = this.findByUsername(oldUsername);
+        if (!user) return null;
 
-        const dataPath = getUserDataPath(username);
-        if (fs.existsSync(dataPath)) {
-            fs.unlinkSync(dataPath);
+        try {
+            // 如果要改用户名，先检查新用户名是否存在
+            if (newUsername && newUsername !== oldUsername) {
+                if (this.findByUsername(newUsername)) {
+                    return { error: '用户名已占用' };
+                }
+            }
+
+            // 构建更新语句
+            const updates = [];
+            const params = [];
+
+            if (level !== undefined) {
+                updates.push('level = ?');
+                params.push(level);
+            }
+            if (password) {
+                updates.push('password = ?');
+                params.push(bcrypt.hashSync(password, 10));
+            }
+            if (newUsername && newUsername !== oldUsername) {
+                updates.push('username = ?');
+                params.push(newUsername);
+            }
+
+            if (updates.length > 0) {
+                params.push(oldUsername);
+                db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE username = ?`).run(...params);
+            }
+
+            logger.info(`用户更新成功: ${oldUsername}`);
+            return this.findByUsername(newUsername || oldUsername);
+        } catch (err) {
+            logger.error('用户更新失败', err);
+            return null;
         }
+    }
 
-        this.accounts.splice(index, 1);
-        this.save();
-        return true;
+    /**
+     * 删除用户
+     */
+    delete(username) {
+        const db = getDb();
+
+        try {
+            const result = db.prepare('DELETE FROM users WHERE username = ?').run(username);
+            if (result.changes > 0) {
+                logger.info(`用户删除成功: ${username}`);
+                return true;
+            }
+            return false;
+        } catch (err) {
+            logger.error('用户删除失败', err);
+            return false;
+        }
+    }
+
+    /**
+     * 更新最后登录时间
+     */
+    updateLastLogin(username) {
+        const db = getDb();
+        try {
+            db.prepare(`UPDATE users SET last_login = datetime('now') WHERE username = ?`).run(username);
+        } catch (err) {
+            logger.error('更新登录时间失败', err);
+        }
+    }
+
+    /**
+     * 验证密码
+     */
+    verifyPassword(username, password) {
+        const user = this.findByUsername(username);
+        if (!user) return false;
+        return bcrypt.compareSync(password, user.password);
     }
 }
 

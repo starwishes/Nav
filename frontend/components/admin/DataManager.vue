@@ -6,9 +6,6 @@
         <el-tab-pane :label="t('data.sites')" name="items" />
       </el-tabs>
       <div class="global-actions">
-        <el-button type="success" :loading="saving" @click="$emit('save')" class="hover-scale">
-          <el-icon><Upload /></el-icon> {{ t('manage.saveSync') }}
-        </el-button>
         <el-button type="info" @click="handleExport" class="hover-scale">{{ t('manage.exportJson') }}</el-button>
         <el-button type="warning" @click="triggerImport" class="hover-scale">{{ t('manage.importJson') }}</el-button>
         <el-button type="success" @click="$emit('show-bookmark-import')" class="hover-scale">{{ t('manage.importBookmark') }}</el-button>
@@ -80,7 +77,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { Upload, Plus, Brush } from '@element-plus/icons-vue';
+import { Plus, Brush } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import CategoryTable from '@/components/CategoryTable.vue';
 import SiteTable from '@/components/SiteTable.vue';
@@ -90,7 +87,6 @@ const { t } = useI18n();
 
 const props = defineProps<{
   activeTab: string;
-  saving: boolean;
   categories: any[];
   items: any[];
   filteredItems: any[];
@@ -100,7 +96,7 @@ const props = defineProps<{
 
 const emit = defineEmits([
   'update:activeTab', 'update:searchKeyword', 'update:filterCategory',
-  'save', 'add-category', 'edit-category', 'delete-category',
+  'add-category', 'edit-category', 'delete-category',
   'add-item', 'edit-item', 'delete-item', 'batch-delete', 'batch-move',
   'show-bookmark-import', 'json-import', 'move-category', 'clean-duplicates'
 ]);
